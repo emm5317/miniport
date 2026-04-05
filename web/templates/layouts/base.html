@@ -40,7 +40,7 @@
     </nav>
     <div id="prune-result" class="hidden px-6 py-2 text-sm text-emerald-400 bg-emerald-950/30"></div>
     <main class="max-w-7xl mx-auto px-6 py-6">
-        {{template "content" .}}
+        {{block "content" .}}{{end}}
     </main>
     <script>
         // Show prune result briefly then hide
