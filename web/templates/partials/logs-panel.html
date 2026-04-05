@@ -63,7 +63,7 @@
                     if (!text) return;
                     var el = document.getElementById('log-content');
                     if (!el) { stopLogStream(); return; }
-                    el.insertAdjacentText('beforeend', text);
+                    el.insertAdjacentHTML('beforeend', text);
                     if (logAutoScroll) el.scrollTop = el.scrollHeight;
                     highlightLogSearch();
                 });

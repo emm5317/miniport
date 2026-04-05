@@ -97,9 +97,9 @@
 
         function sortTable(col) {
             if (_sortCol === col) { _sortAsc = !_sortAsc; } else { _sortCol = col; _sortAsc = true; }
-            var tbody = document.querySelector('#container-table tbody');
-            if (!tbody) return;
-            var rows = Array.from(tbody.querySelectorAll('.container-row'));
+            var container = document.getElementById('container-list');
+            if (!container) return;
+            var rows = Array.from(container.querySelectorAll('.container-row'));
             rows.sort(function(a, b) {
                 var av, bv;
                 var ac = a.children[col], bc = b.children[col];
@@ -113,10 +113,16 @@
                 if (av > bv) return _sortAsc ? 1 : -1;
                 return 0;
             });
-            rows.forEach(function(r) { tbody.appendChild(r); });
+            // Re-append rows after the last non-row element
+            var lastRow = rows[rows.length - 1];
+            if (lastRow) {
+                var parent = lastRow.parentNode;
+                rows.forEach(function(r) { parent.appendChild(r); });
+            }
             // Update sort arrows
             document.querySelectorAll('.sort-arrow').forEach(function(s) { s.textContent = ''; });
-            var th = document.querySelectorAll('#container-table th')[col];
+            var headers = document.querySelectorAll('#container-table .col-h.sortable');
+            var th = headers[col];
             if (th) { var arrow = th.querySelector('.sort-arrow'); if (arrow) arrow.textContent = _sortAsc ? ' ▲' : ' ▼'; }
         }
 

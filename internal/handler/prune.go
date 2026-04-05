@@ -62,6 +62,15 @@ func CapPct(v float64) float64 {
 	return v
 }
 
+// FormatMB formats bytes as a human-readable MB value.
+func FormatMB(b uint64) string {
+	mb := float64(b) / 1024 / 1024
+	if mb < 100 {
+		return fmt.Sprintf("%.1f MB", mb)
+	}
+	return fmt.Sprintf("%.0f MB", mb)
+}
+
 func FormatBytes(b uint64) string {
 	const unit = 1024
 	if b < unit {

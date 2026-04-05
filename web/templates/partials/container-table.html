@@ -23,107 +23,84 @@
            class="search-sm">
 </div>
 
-<!-- Table -->
-<table class="w-full text-sm" id="container-table">
-    <thead>
-        <tr class="text-left text-gray-500 border-b border-gray-800">
-            <th class="pb-3 pr-4 font-medium sortable" onclick="sortTable(0)">Name <span class="sort-arrow"></span></th>
-            <th class="pb-3 pr-4 font-medium sortable" onclick="sortTable(1)">Image <span class="sort-arrow"></span></th>
-            <th class="pb-3 pr-4 font-medium sortable" onclick="sortTable(2)">State <span class="sort-arrow"></span></th>
-            <th class="pb-3 pr-4 font-medium">Status</th>
-            <th class="pb-3 pr-4 font-medium sortable" onclick="sortTable(4)">CPU <span class="sort-arrow"></span></th>
-            <th class="pb-3 pr-4 font-medium sortable" onclick="sortTable(5)">Mem <span class="sort-arrow"></span></th>
-            <th class="pb-3 pr-4 font-medium">Trend</th>
-            <th class="pb-3 pr-4 font-medium">Ports</th>
-            <th class="pb-3 font-medium">Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {{range .Containers}}
-        <tr class="border-b border-gray-800/50 hover:bg-gray-900/50 container-row"
-            data-name="{{.Name}}" data-image="{{.Image}}" data-state="{{.State}}">
-            <td class="py-3 pr-4 font-mono text-sm">{{.Name}}</td>
-            <td class="py-3 pr-4 text-gray-400 text-xs max-w-xs truncate">{{.Image}}</td>
-            <td class="py-3 pr-4">
-                {{if eq .State "running"}}
-                    <span class="inline-flex items-center gap-1.5 text-emerald-400">
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>running
-                    </span>
-                {{else if eq .State "exited"}}
-                    <span class="text-gray-500">exited</span>
-                {{else}}
-                    <span class="text-yellow-500">{{.State}}</span>
-                {{end}}
-            </td>
-            <td class="py-3 pr-4 text-gray-400 text-xs">{{.Status}}</td>
-            {{if and (eq .State "running") .Stats}}
-            <td class="py-3 pr-4 font-mono text-xs" data-sort-value="{{printf "%.2f" .Stats.CPUPercent}}">
-                <div class="flex items-center gap-1.5">
-                    <div class="stat-bar"><div class="stat-fill bg-emerald-400" style="width:{{printf "%.0f" (capPct .Stats.CPUPercent)}}%"></div></div>
-                    <span>{{printf "%.1f" .Stats.CPUPercent}}%</span>
-                </div>
-            </td>
-            <td class="py-3 pr-4 font-mono text-xs" data-sort-value="{{printf "%.2f" .Stats.MemPercent}}">
-                <div class="flex items-center gap-1.5">
-                    <div class="stat-bar"><div class="stat-fill bg-cyan-400" style="width:{{printf "%.0f" (capPct .Stats.MemPercent)}}%"></div></div>
-                    <span>{{printf "%.1f" .Stats.MemPercent}}%</span>
-                </div>
-            </td>
-            <td class="py-3 pr-4">
-                <div class="flex gap-1 items-center">
-                    {{sparkline .History}}
-                    {{sparklineMem .History}}
-                </div>
-            </td>
-            {{else}}
-            <td class="py-3 pr-4 text-gray-600 text-xs" data-sort-value="-1">—</td>
-            <td class="py-3 pr-4 text-gray-600 text-xs" data-sort-value="-1">—</td>
-            <td class="py-3 pr-4 text-gray-600 text-xs">—</td>
-            {{end}}
-            <td class="py-3 pr-4 text-gray-400 text-xs font-mono">{{.Ports}}</td>
-            <td class="py-3">
-                <div class="flex flex-wrap gap-1">
-                    {{if eq .State "running"}}
-                    <button hx-post="/containers/{{.ID}}/stop" hx-swap="none"
-                            class="px-2 py-1 text-xs bg-gray-800 rounded hover:bg-yellow-900/50 text-yellow-300">
-                        Stop
-                    </button>
-                    <button hx-post="/containers/{{.ID}}/restart" hx-swap="none"
-                            class="px-2 py-1 text-xs bg-gray-800 rounded hover:bg-blue-900/50 text-blue-300">
-                        Restart
-                    </button>
-                    {{else}}
-                    <button hx-post="/containers/{{.ID}}/start" hx-swap="none"
-                            class="px-2 py-1 text-xs bg-gray-800 rounded hover:bg-emerald-900/50 text-emerald-300">
-                        Start
-                    </button>
-                    {{end}}
-                    <button hx-get="/containers/{{.ID}}/logs"
-                            hx-target="#detail-panel" hx-swap="innerHTML"
-                            class="px-2 py-1 text-xs bg-gray-800 rounded hover:bg-gray-700">
-                        Logs
-                    </button>
-                    <button hx-get="/containers/{{.ID}}/stats"
-                            hx-target="#detail-panel" hx-swap="innerHTML"
-                            class="px-2 py-1 text-xs bg-gray-800 rounded hover:bg-gray-700">
-                        Stats
-                    </button>
-                    <button hx-get="/containers/{{.ID}}/inspect"
-                            hx-target="#detail-panel" hx-swap="innerHTML"
-                            class="px-2 py-1 text-xs bg-gray-800 rounded hover:bg-gray-700">
-                        Inspect
-                    </button>
-                    <button hx-delete="/containers/{{.ID}}" hx-swap="none"
-                            hx-confirm="Remove this container permanently?"
-                            class="px-2 py-1 text-xs bg-gray-800 rounded hover:bg-red-900/50 text-red-400">
-                        Remove
-                    </button>
-                </div>
-            </td>
-        </tr>
+<!-- Table header -->
+<div class="table-head" id="container-table">
+    <span class="col-h sortable" onclick="sortTable(0)">Container <span class="sort-arrow"></span></span>
+    <span class="col-h sortable" onclick="sortTable(1)">Image <span class="sort-arrow"></span></span>
+    <span class="col-h sortable" onclick="sortTable(2)">Status <span class="sort-arrow"></span></span>
+    <span class="col-h sortable" onclick="sortTable(3)">CPU <span class="sort-arrow"></span></span>
+    <span class="col-h sortable" onclick="sortTable(4)">Memory <span class="sort-arrow"></span></span>
+    <span class="col-h">Port / Trend</span>
+    <span class="col-h">Actions</span>
+</div>
+
+<!-- Container rows -->
+{{range .Containers}}
+<div class="container-row{{if ne .State "running"}} stopped{{end}}"
+     data-name="{{.Name}}" data-image="{{.Image}}" data-state="{{.State}}">
+    <!-- Container name + uptime -->
+    <div>
+        <div class="cname">{{.Name}}</div>
+        <div class="cage">{{.Status}}</div>
+    </div>
+    <!-- Image -->
+    <div class="cimage">{{.Image}}</div>
+    <!-- Status -->
+    <div class="status">
+        {{if eq .State "running"}}
+            <span class="dot dot-green"></span><span class="status-text">running</span>
+        {{else if eq .State "exited"}}
+            <span class="dot dot-gray"></span><span class="status-text">exited</span>
+        {{else}}
+            <span class="dot" style="background:var(--color-warning)"></span><span class="status-text">{{.State}}</span>
         {{end}}
-        {{if not .Containers}}
-        <tr><td colspan="9" class="py-8 text-center text-gray-600">No containers found</td></tr>
+    </div>
+    <!-- CPU -->
+    {{if and (eq .State "running") .Stats}}
+    <div data-sort-value="{{printf "%.2f" .Stats.CPUPercent}}">
+        <div class="metric-val" data-label="CPU">{{printf "%.1f" .Stats.CPUPercent}}%</div>
+        <div class="metric-bar"><div class="metric-fill cpu" style="width:{{printf "%.0f" (capPct .Stats.CPUPercent)}}%"></div></div>
+    </div>
+    <!-- Memory -->
+    <div data-sort-value="{{printf "%.2f" .Stats.MemPercent}}">
+        <div class="metric-val" data-label="Mem">{{formatMB .Stats.MemUsage}}</div>
+        <div class="metric-bar"><div class="metric-fill mem" style="width:{{printf "%.0f" (capPct .Stats.MemPercent)}}%"></div></div>
+    </div>
+    {{else}}
+    <div data-sort-value="-1"><span class="metric-val dim">—</span></div>
+    <div data-sort-value="-1"><span class="metric-val dim">—</span></div>
+    {{end}}
+    <!-- Port / Trend -->
+    <div class="port-trend-cell">
+        {{if .Ports}}<span class="port-badge">{{.Ports}}</span>{{else}}<span class="no-ports">—</span>{{end}}
+        {{if and (eq .State "running") .Stats}}
+        <div class="flex gap-1 items-center">
+            {{sparkline .History}}
+            {{sparklineMem .History}}
+        </div>
         {{end}}
-    </tbody>
-</table>
+    </div>
+    <!-- Actions -->
+    <div class="actions">
+        {{if eq .State "running"}}
+        <button class="btn-icon btn-stop" hx-post="/containers/{{.ID}}/stop" hx-swap="none" title="Stop">&#9632;</button>
+        {{else}}
+        <button class="btn-icon btn-start" hx-post="/containers/{{.ID}}/start" hx-swap="none" title="Start">&#9654;</button>
+        {{end}}
+        <button class="btn-icon" hx-post="/containers/{{.ID}}/restart" hx-swap="none" title="Restart">&#8634;</button>
+        <button class="btn-text" hx-get="/containers/{{.ID}}/logs" hx-target="#detail-panel" hx-swap="innerHTML">Logs</button>
+        <details class="action-menu">
+            <summary class="btn-icon btn-more" title="More">&#8943;</summary>
+            <div class="action-dropdown">
+                <button hx-get="/containers/{{.ID}}/stats" hx-target="#detail-panel" hx-swap="innerHTML">Stats</button>
+                <button hx-get="/containers/{{.ID}}/inspect" hx-target="#detail-panel" hx-swap="innerHTML">Inspect</button>
+                <hr class="dropdown-divider">
+                <button class="btn-danger" hx-delete="/containers/{{.ID}}" hx-swap="none" hx-confirm="Remove {{.Name}}?">Remove</button>
+            </div>
+        </details>
+    </div>
+</div>
+{{end}}
+{{if not .Containers}}
+<div class="container-row" style="justify-content:center;color:var(--text-faint)">No containers found</div>
+{{end}}

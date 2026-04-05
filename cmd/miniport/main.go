@@ -41,6 +41,7 @@ func main() {
 	tmplSub, _ := fs.Sub(web.Templates, "templates")
 	handler.InitTemplates(tmplSub, template.FuncMap{
 		"formatBytes": handler.FormatBytes,
+		"formatMB":    handler.FormatMB,
 		"pct": func(part, total int) int {
 			if total == 0 {
 				return 0

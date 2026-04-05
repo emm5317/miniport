@@ -30,7 +30,7 @@ func (h *Handler) Logs(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(204)
 			return
 		}
-		renderPartial(w, "logs-lines.html", map[string]any{"Lines": logs})
+		renderPartial(w, "logs-lines.html", map[string]any{"Lines": colorizeLogs(logs)})
 		return
 	}
 
@@ -41,7 +41,7 @@ func (h *Handler) Logs(w http.ResponseWriter, r *http.Request) {
 	}
 	renderPartial(w, "logs-panel.html", map[string]any{
 		"ContainerID": id,
-		"Logs":        logs,
+		"Logs":        colorizeLogs(logs),
 		"Lines":       lines,
 		"BasePath":    "/containers/" + id,
 	})
