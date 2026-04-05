@@ -1,0 +1,84 @@
+<table class="w-full text-sm">
+    <thead>
+        <tr class="text-left text-gray-500 border-b border-gray-800">
+            <th class="pb-3 pr-4 font-medium">Name</th>
+            <th class="pb-3 pr-4 font-medium">Image</th>
+            <th class="pb-3 pr-4 font-medium">State</th>
+            <th class="pb-3 pr-4 font-medium">Status</th>
+            <th class="pb-3 pr-4 font-medium">Ports</th>
+            <th class="pb-3 font-medium">Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range .Containers}}
+        <tr class="border-b border-gray-800/50 hover:bg-gray-900/50" x-data="{ confirm: false }">
+            <td class="py-3 pr-4 font-mono text-sm">{{.Name}}</td>
+            <td class="py-3 pr-4 text-gray-400 text-xs max-w-xs truncate">{{.Image}}</td>
+            <td class="py-3 pr-4">
+                {{if eq .State "running"}}
+                    <span class="inline-flex items-center gap-1.5 text-emerald-400">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>running
+                    </span>
+                {{else if eq .State "exited"}}
+                    <span class="text-gray-500">exited</span>
+                {{else}}
+                    <span class="text-yellow-500">{{.State}}</span>
+                {{end}}
+            </td>
+            <td class="py-3 pr-4 text-gray-400 text-xs">{{.Status}}</td>
+            <td class="py-3 pr-4 text-gray-400 text-xs font-mono">{{.Ports}}</td>
+            <td class="py-3">
+                <div class="flex flex-wrap gap-1">
+                    {{if eq .State "running"}}
+                    <button hx-post="/containers/{{.ID}}/stop" hx-swap="none"
+                            class="px-2 py-1 text-xs bg-gray-800 rounded hover:bg-yellow-900/50 text-yellow-300">
+                        Stop
+                    </button>
+                    <button hx-post="/containers/{{.ID}}/restart" hx-swap="none"
+                            class="px-2 py-1 text-xs bg-gray-800 rounded hover:bg-blue-900/50 text-blue-300">
+                        Restart
+                    </button>
+                    {{else}}
+                    <button hx-post="/containers/{{.ID}}/start" hx-swap="none"
+                            class="px-2 py-1 text-xs bg-gray-800 rounded hover:bg-emerald-900/50 text-emerald-300">
+                        Start
+                    </button>
+                    {{end}}
+                    <button hx-get="/containers/{{.ID}}/logs"
+                            hx-target="#detail-panel" hx-swap="innerHTML"
+                            class="px-2 py-1 text-xs bg-gray-800 rounded hover:bg-gray-700">
+                        Logs
+                    </button>
+                    <button hx-get="/containers/{{.ID}}/stats"
+                            hx-target="#detail-panel" hx-swap="innerHTML"
+                            class="px-2 py-1 text-xs bg-gray-800 rounded hover:bg-gray-700">
+                        Stats
+                    </button>
+                    <template x-if="!confirm">
+                        <button @click="confirm = true"
+                                class="px-2 py-1 text-xs bg-gray-800 rounded hover:bg-red-900/50 text-red-400">
+                            Remove
+                        </button>
+                    </template>
+                    <template x-if="confirm">
+                        <span class="flex gap-1">
+                            <button hx-delete="/containers/{{.ID}}" hx-swap="none"
+                                    @click="confirm = false"
+                                    class="px-2 py-1 text-xs bg-red-700 rounded text-white">
+                                Confirm
+                            </button>
+                            <button @click="confirm = false"
+                                    class="px-2 py-1 text-xs bg-gray-700 rounded">
+                                Cancel
+                            </button>
+                        </span>
+                    </template>
+                </div>
+            </td>
+        </tr>
+        {{end}}
+        {{if not .Containers}}
+        <tr><td colspan="6" class="py-8 text-center text-gray-600">No containers found</td></tr>
+        {{end}}
+    </tbody>
+</table>

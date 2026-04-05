@@ -1,0 +1,7 @@
+<div id="container-list"
+     hx-get="/containers"
+     hx-trigger="every 10s, refresh-containers from:body"
+     hx-swap="innerHTML">
+    {{template "partials/container-table" .}}
+</div>
+<div id="detail-panel" class="mt-6"></div>

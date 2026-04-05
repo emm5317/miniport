@@ -1,0 +1,33 @@
+<div class="bg-gray-900 rounded-lg border border-gray-800 p-4"
+     hx-get="/containers/{{.ContainerID}}/stats"
+     hx-trigger="every 5s"
+     hx-swap="outerHTML">
+    <div class="flex items-center justify-between mb-4">
+        <h3 class="text-sm font-medium text-gray-300">
+            Stats — <span class="font-mono text-xs">{{.ContainerID}}</span>
+        </h3>
+        <button @click="$el.closest('#detail-panel').replaceChildren()"
+                class="px-2 py-1 text-xs bg-gray-800 rounded hover:bg-gray-700">
+            Close
+        </button>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+        <div>
+            <div class="text-gray-500 text-xs mb-1">CPU</div>
+            <div class="font-mono">{{printf "%.1f" .Stats.CPUPercent}}%</div>
+        </div>
+        <div>
+            <div class="text-gray-500 text-xs mb-1">Memory</div>
+            <div class="font-mono">{{formatBytes .Stats.MemUsage}} / {{formatBytes .Stats.MemLimit}}</div>
+            <div class="text-xs text-gray-500">{{printf "%.1f" .Stats.MemPercent}}%</div>
+        </div>
+        <div>
+            <div class="text-gray-500 text-xs mb-1">Net I/O</div>
+            <div class="font-mono text-xs">↓ {{formatBytes .Stats.NetRx}} ↑ {{formatBytes .Stats.NetTx}}</div>
+        </div>
+        <div>
+            <div class="text-gray-500 text-xs mb-1">Disk I/O</div>
+            <div class="font-mono text-xs">R {{formatBytes .Stats.BlockRead}} W {{formatBytes .Stats.BlockWrite}}</div>
+        </div>
+    </div>
+</div>
