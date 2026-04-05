@@ -2,44 +2,39 @@ package handler
 
 import (
 	"net/http"
-	"sync"
 
 	"github.com/emm5317/miniport/internal/docker"
+	"github.com/emm5317/miniport/internal/stats"
 )
 
 // ContainerRow pairs a container with its live stats (nil if not running).
 type ContainerRow struct {
 	docker.ContainerInfo
-	Stats *docker.StatsSnapshot
+	Stats   *docker.StatsSnapshot
+	History []docker.StatsSnapshot
 }
 
 type Handler struct {
 	docker       *docker.Service
 	LogTailLines int
+	collector    *stats.Collector
 }
 
-func New(d *docker.Service, logTailLines int) *Handler {
-	return &Handler{docker: d, LogTailLines: logTailLines}
+func New(d *docker.Service, logTailLines int, c *stats.Collector) *Handler {
+	return &Handler{docker: d, LogTailLines: logTailLines, collector: c}
 }
 
-// buildRows fetches stats concurrently for running containers.
-func (h *Handler) buildRows(r *http.Request, containers []docker.ContainerInfo) []ContainerRow {
+// buildRows reads latest stats from the collector instead of fetching live.
+func (h *Handler) buildRows(containers []docker.ContainerInfo) []ContainerRow {
+	latest := h.collector.AllLatest()
 	rows := make([]ContainerRow, len(containers))
-	var wg sync.WaitGroup
 	for i, c := range containers {
 		rows[i] = ContainerRow{ContainerInfo: c}
-		if c.State == "running" {
-			wg.Add(1)
-			go func(idx int, id string) {
-				defer wg.Done()
-				stats, err := h.docker.Stats(r.Context(), id)
-				if err == nil {
-					rows[idx].Stats = stats
-				}
-			}(i, c.ID)
+		if s, ok := latest[c.ID]; ok {
+			rows[i].Stats = s
 		}
+		rows[i].History = h.collector.ContainerHistory(c.ID)
 	}
-	wg.Wait()
 	return rows
 }
 
@@ -50,7 +45,7 @@ func (h *Handler) Index(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	summary := docker.Summarize(containers)
-	rows := h.buildRows(r, containers)
+	rows := h.buildRows(containers)
 	renderPage(w, "pages/index", map[string]any{
 		"Containers": rows,
 		"Summary":    summary,
@@ -64,7 +59,7 @@ func (h *Handler) ContainerTable(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	summary := docker.Summarize(containers)
-	rows := h.buildRows(r, containers)
+	rows := h.buildRows(containers)
 	renderPartial(w, "container-table.html", map[string]any{
 		"Containers": rows,
 		"Summary":    summary,

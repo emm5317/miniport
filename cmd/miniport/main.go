@@ -15,6 +15,7 @@ import (
 
 	"github.com/emm5317/miniport/internal/docker"
 	"github.com/emm5317/miniport/internal/handler"
+	"github.com/emm5317/miniport/internal/stats"
 	"github.com/emm5317/miniport/web"
 )
 
@@ -25,6 +26,10 @@ func main() {
 	logTailLines, _ := strconv.Atoi(envOr("MINIPORT_LOG_TAIL_LINES", "100"))
 	if logTailLines <= 0 {
 		logTailLines = 100
+	}
+	statsInterval, _ := strconv.Atoi(envOr("MINIPORT_STATS_INTERVAL", "15"))
+	if statsInterval <= 0 {
+		statsInterval = 15
 	}
 
 	dockerSvc, err := docker.NewService()
@@ -47,12 +52,16 @@ func main() {
 			}
 			return (a + b) * 100 / total
 		},
-		"capPct": handler.CapPct,
+		"capPct":       handler.CapPct,
+		"sparkline":    handler.Sparkline,
+		"sparklineMem": handler.SparklineMem,
 	})
 
 	staticSub, _ := fs.Sub(web.Static, "static")
 
-	h := handler.New(dockerSvc, logTailLines)
+	collector := stats.NewCollector(dockerSvc, time.Duration(statsInterval)*time.Second, 60)
+
+	h := handler.New(dockerSvc, logTailLines, collector)
 
 	mux := http.NewServeMux()
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.FS(staticSub))))
@@ -81,6 +90,10 @@ func main() {
 		Handler: h2,
 	}
 
+	ctx, cancel := context.WithCancel(context.Background())
+
+	go collector.Start(ctx)
+
 	go func() {
 		log.Printf("Listening on %s", addr)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -92,9 +105,10 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 	log.Println("Shutting down...")
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	if err := srv.Shutdown(ctx); err != nil {
+	cancel()
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer shutdownCancel()
+	if err := srv.Shutdown(shutdownCtx); err != nil {
 		log.Printf("Shutdown error: %v", err)
 	}
 }

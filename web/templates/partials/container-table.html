@@ -1,20 +1,32 @@
 {{template "summary-strip.html" .Summary}}
-<table class="w-full text-sm">
+<div class="flex items-center gap-4 mb-4">
+    <input type="text" id="container-search" placeholder="Filter containers…"
+           oninput="filterContainers()"
+           class="search-input">
+    <div class="flex gap-1" id="state-tabs">
+        <button class="filter-tab filter-tab-active" onclick="setStateFilter('all')">All</button>
+        <button class="filter-tab" onclick="setStateFilter('running')">Running</button>
+        <button class="filter-tab" onclick="setStateFilter('exited')">Stopped</button>
+    </div>
+</div>
+<table class="w-full text-sm" id="container-table">
     <thead>
         <tr class="text-left text-gray-500 border-b border-gray-800">
-            <th class="pb-3 pr-4 font-medium">Name</th>
-            <th class="pb-3 pr-4 font-medium">Image</th>
-            <th class="pb-3 pr-4 font-medium">State</th>
+            <th class="pb-3 pr-4 font-medium sortable" onclick="sortTable(0)">Name <span class="sort-arrow"></span></th>
+            <th class="pb-3 pr-4 font-medium sortable" onclick="sortTable(1)">Image <span class="sort-arrow"></span></th>
+            <th class="pb-3 pr-4 font-medium sortable" onclick="sortTable(2)">State <span class="sort-arrow"></span></th>
             <th class="pb-3 pr-4 font-medium">Status</th>
-            <th class="pb-3 pr-4 font-medium">CPU</th>
-            <th class="pb-3 pr-4 font-medium">Mem</th>
+            <th class="pb-3 pr-4 font-medium sortable" onclick="sortTable(4)">CPU <span class="sort-arrow"></span></th>
+            <th class="pb-3 pr-4 font-medium sortable" onclick="sortTable(5)">Mem <span class="sort-arrow"></span></th>
+            <th class="pb-3 pr-4 font-medium">Trend</th>
             <th class="pb-3 pr-4 font-medium">Ports</th>
             <th class="pb-3 font-medium">Actions</th>
         </tr>
     </thead>
     <tbody>
         {{range .Containers}}
-        <tr class="border-b border-gray-800/50 hover:bg-gray-900/50">
+        <tr class="border-b border-gray-800/50 hover:bg-gray-900/50 container-row"
+            data-name="{{.Name}}" data-image="{{.Image}}" data-state="{{.State}}">
             <td class="py-3 pr-4 font-mono text-sm">{{.Name}}</td>
             <td class="py-3 pr-4 text-gray-400 text-xs max-w-xs truncate">{{.Image}}</td>
             <td class="py-3 pr-4">
@@ -30,20 +42,27 @@
             </td>
             <td class="py-3 pr-4 text-gray-400 text-xs">{{.Status}}</td>
             {{if and (eq .State "running") .Stats}}
-            <td class="py-3 pr-4 font-mono text-xs">
+            <td class="py-3 pr-4 font-mono text-xs" data-sort-value="{{printf "%.2f" .Stats.CPUPercent}}">
                 <div class="flex items-center gap-1.5">
                     <div class="stat-bar"><div class="stat-fill bg-emerald-400" style="width:{{printf "%.0f" (capPct .Stats.CPUPercent)}}%"></div></div>
                     <span>{{printf "%.1f" .Stats.CPUPercent}}%</span>
                 </div>
             </td>
-            <td class="py-3 pr-4 font-mono text-xs">
+            <td class="py-3 pr-4 font-mono text-xs" data-sort-value="{{printf "%.2f" .Stats.MemPercent}}">
                 <div class="flex items-center gap-1.5">
                     <div class="stat-bar"><div class="stat-fill bg-cyan-400" style="width:{{printf "%.0f" (capPct .Stats.MemPercent)}}%"></div></div>
                     <span>{{printf "%.1f" .Stats.MemPercent}}%</span>
                 </div>
             </td>
+            <td class="py-3 pr-4">
+                <div class="flex gap-1 items-center">
+                    {{sparkline .History}}
+                    {{sparklineMem .History}}
+                </div>
+            </td>
             {{else}}
-            <td class="py-3 pr-4 text-gray-600 text-xs">—</td>
+            <td class="py-3 pr-4 text-gray-600 text-xs" data-sort-value="-1">—</td>
+            <td class="py-3 pr-4 text-gray-600 text-xs" data-sort-value="-1">—</td>
             <td class="py-3 pr-4 text-gray-600 text-xs">—</td>
             {{end}}
             <td class="py-3 pr-4 text-gray-400 text-xs font-mono">{{.Ports}}</td>
@@ -75,6 +94,7 @@
                         Stats
                     </button>
                     <button hx-delete="/containers/{{.ID}}" hx-swap="none"
+                            hx-confirm="Remove this container permanently?"
                             class="px-2 py-1 text-xs bg-gray-800 rounded hover:bg-red-900/50 text-red-400">
                         Remove
                     </button>
@@ -83,7 +103,7 @@
         </tr>
         {{end}}
         {{if not .Containers}}
-        <tr><td colspan="8" class="py-8 text-center text-gray-600">No containers found</td></tr>
+        <tr><td colspan="9" class="py-8 text-center text-gray-600">No containers found</td></tr>
         {{end}}
     </tbody>
 </table>

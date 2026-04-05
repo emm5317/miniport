@@ -11,7 +11,7 @@
             Close
         </button>
     </div>
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
         <div>
             <div class="text-gray-500 text-xs mb-1">CPU</div>
             <div class="font-mono">{{printf "%.1f" .Stats.CPUPercent}}%</div>
@@ -30,4 +30,16 @@
             <div class="font-mono text-xs">R {{formatBytes .Stats.BlockRead}} W {{formatBytes .Stats.BlockWrite}}</div>
         </div>
     </div>
+    {{if .History}}
+    <div class="grid grid-cols-2 gap-4">
+        <div>
+            <div class="text-gray-500 text-xs mb-1">CPU History</div>
+            <div class="sparkline-chart">{{sparkline .History}}</div>
+        </div>
+        <div>
+            <div class="text-gray-500 text-xs mb-1">Memory History</div>
+            <div class="sparkline-chart">{{sparklineMem .History}}</div>
+        </div>
+    </div>
+    {{end}}
 </div>

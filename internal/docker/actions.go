@@ -61,6 +61,7 @@ type StatsSnapshot struct {
 	NetTx      uint64
 	BlockRead  uint64
 	BlockWrite uint64
+	Timestamp  int64 // Unix timestamp when this snapshot was taken
 }
 
 const (
@@ -242,6 +243,7 @@ func calculateStats(s *container.StatsResponse) *StatsSnapshot {
 		NetTx:      netTx,
 		BlockRead:  blockRead,
 		BlockWrite: blockWrite,
+		Timestamp:  time.Now().Unix(),
 	}
 }
 

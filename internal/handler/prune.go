@@ -1,9 +1,19 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 )
+
+func setPruneTrigger(w http.ResponseWriter, msg string) {
+	trigger := map[string]any{
+		"refresh-containers": "",
+		"showToast":          map[string]string{"msg": msg, "type": "success"},
+	}
+	b, _ := json.Marshal(trigger)
+	w.Header().Set("HX-Trigger", string(b))
+}
 
 func (h *Handler) PruneContainers(w http.ResponseWriter, r *http.Request) {
 	freed, err := h.docker.PruneContainers(r.Context())
@@ -11,7 +21,8 @@ func (h *Handler) PruneContainers(w http.ResponseWriter, r *http.Request) {
 		httpError(w, err.Error(), 500)
 		return
 	}
-	fmt.Fprintf(w, "Reclaimed %s", FormatBytes(freed))
+	setPruneTrigger(w, fmt.Sprintf("Containers pruned — reclaimed %s", FormatBytes(freed)))
+	w.WriteHeader(200)
 }
 
 func (h *Handler) PruneImages(w http.ResponseWriter, r *http.Request) {
@@ -20,7 +31,8 @@ func (h *Handler) PruneImages(w http.ResponseWriter, r *http.Request) {
 		httpError(w, err.Error(), 500)
 		return
 	}
-	fmt.Fprintf(w, "Reclaimed %s", FormatBytes(freed))
+	setPruneTrigger(w, fmt.Sprintf("Images pruned — reclaimed %s", FormatBytes(freed)))
+	w.WriteHeader(200)
 }
 
 func (h *Handler) PruneVolumes(w http.ResponseWriter, r *http.Request) {
@@ -29,7 +41,8 @@ func (h *Handler) PruneVolumes(w http.ResponseWriter, r *http.Request) {
 		httpError(w, err.Error(), 500)
 		return
 	}
-	fmt.Fprintf(w, "Reclaimed %s", FormatBytes(freed))
+	setPruneTrigger(w, fmt.Sprintf("Volumes pruned — reclaimed %s", FormatBytes(freed)))
+	w.WriteHeader(200)
 }
 
 func (h *Handler) PruneNetworks(w http.ResponseWriter, r *http.Request) {
@@ -37,7 +50,8 @@ func (h *Handler) PruneNetworks(w http.ResponseWriter, r *http.Request) {
 		httpError(w, err.Error(), 500)
 		return
 	}
-	w.Write([]byte("Networks pruned"))
+	setPruneTrigger(w, "Networks pruned")
+	w.WriteHeader(200)
 }
 
 // CapPct caps a percentage value at 100 (CPU% can exceed 100 on multi-core).

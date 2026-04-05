@@ -15,22 +15,26 @@
                 Prune ▾
             </summary>
             <div class="absolute right-0 top-full mt-1 bg-gray-900 border border-gray-700 rounded shadow-lg z-10">
-                <button hx-post="/prune/containers" hx-target="#prune-result" hx-swap="innerHTML"
+                <button hx-post="/prune/containers" hx-swap="none"
+                        hx-confirm="Prune all stopped containers?"
                         onclick="this.closest('details').removeAttribute('open')"
                         class="block w-full text-left px-4 py-2 text-sm hover:bg-gray-800">
                     Containers
                 </button>
-                <button hx-post="/prune/images" hx-target="#prune-result" hx-swap="innerHTML"
+                <button hx-post="/prune/images" hx-swap="none"
+                        hx-confirm="Prune all dangling images?"
                         onclick="this.closest('details').removeAttribute('open')"
                         class="block w-full text-left px-4 py-2 text-sm hover:bg-gray-800">
                     Images
                 </button>
-                <button hx-post="/prune/volumes" hx-target="#prune-result" hx-swap="innerHTML"
+                <button hx-post="/prune/volumes" hx-swap="none"
+                        hx-confirm="Prune all unused volumes?"
                         onclick="this.closest('details').removeAttribute('open')"
                         class="block w-full text-left px-4 py-2 text-sm hover:bg-gray-800">
                     Volumes
                 </button>
-                <button hx-post="/prune/networks" hx-target="#prune-result" hx-swap="innerHTML"
+                <button hx-post="/prune/networks" hx-swap="none"
+                        hx-confirm="Prune all unused networks?"
                         onclick="this.closest('details').removeAttribute('open')"
                         class="block w-full text-left px-4 py-2 text-sm hover:bg-gray-800">
                     Networks
@@ -38,17 +42,93 @@
             </div>
         </details>
     </nav>
-    <div id="prune-result" class="hidden px-6 py-2 text-sm text-emerald-400 bg-emerald-950/30"></div>
+    <div id="toasts" class="toast-container"></div>
     <main class="max-w-7xl mx-auto px-6 py-6">
         {{template "index.html" .}}
     </main>
     <script>
-        // Show prune result briefly then hide
+        function toast(msg, type) {
+            var el = document.createElement('div');
+            el.className = 'toast toast-' + (type || 'info');
+            el.textContent = msg;
+            document.getElementById('toasts').appendChild(el);
+            requestAnimationFrame(function() { el.classList.add('toast-show'); });
+            setTimeout(function() {
+                el.classList.remove('toast-show');
+                el.classList.add('toast-hide');
+                setTimeout(function() { el.remove(); }, 300);
+            }, 3500);
+        }
+
+        // Listen for toast triggers from HTMX responses
+        document.body.addEventListener('showToast', function(evt) {
+            var d = evt.detail;
+            toast(d.msg || d.value || '', d.type || 'success');
+        });
+
+        // Show error toast on failed HTMX requests
+        document.body.addEventListener('htmx:responseError', function(evt) {
+            toast(evt.detail.xhr.responseText || 'Request failed', 'error');
+        });
+
+        // --- Container search, filter, sort ---
+        var _stateFilter = 'all';
+        var _sortCol = -1;
+        var _sortAsc = true;
+
+        function filterContainers() {
+            var q = (document.getElementById('container-search') || {}).value || '';
+            q = q.toLowerCase();
+            var rows = document.querySelectorAll('.container-row');
+            rows.forEach(function(row) {
+                var name = (row.dataset.name || '').toLowerCase();
+                var image = (row.dataset.image || '').toLowerCase();
+                var state = row.dataset.state || '';
+                var matchText = !q || name.indexOf(q) !== -1 || image.indexOf(q) !== -1;
+                var matchState = _stateFilter === 'all' || state === _stateFilter;
+                row.style.display = (matchText && matchState) ? '' : 'none';
+            });
+        }
+
+        function setStateFilter(state) {
+            _stateFilter = state;
+            var tabs = document.querySelectorAll('#state-tabs .filter-tab');
+            tabs.forEach(function(t) {
+                t.classList.toggle('filter-tab-active', t.textContent.trim().toLowerCase() === state ||
+                    (state === 'all' && t.textContent.trim() === 'All') ||
+                    (state === 'exited' && t.textContent.trim() === 'Stopped'));
+            });
+            filterContainers();
+        }
+
+        function sortTable(col) {
+            if (_sortCol === col) { _sortAsc = !_sortAsc; } else { _sortCol = col; _sortAsc = true; }
+            var tbody = document.querySelector('#container-table tbody');
+            if (!tbody) return;
+            var rows = Array.from(tbody.querySelectorAll('.container-row'));
+            rows.sort(function(a, b) {
+                var av, bv;
+                var ac = a.children[col], bc = b.children[col];
+                if (ac && ac.dataset.sortValue !== undefined) {
+                    av = parseFloat(ac.dataset.sortValue); bv = parseFloat(bc.dataset.sortValue);
+                } else {
+                    av = (ac ? ac.textContent : '').trim().toLowerCase();
+                    bv = (bc ? bc.textContent : '').trim().toLowerCase();
+                }
+                if (av < bv) return _sortAsc ? -1 : 1;
+                if (av > bv) return _sortAsc ? 1 : -1;
+                return 0;
+            });
+            rows.forEach(function(r) { tbody.appendChild(r); });
+            // Update sort arrows
+            document.querySelectorAll('.sort-arrow').forEach(function(s) { s.textContent = ''; });
+            var th = document.querySelectorAll('#container-table th')[col];
+            if (th) { var arrow = th.querySelector('.sort-arrow'); if (arrow) arrow.textContent = _sortAsc ? ' ▲' : ' ▼'; }
+        }
+
+        // Re-apply filters after HTMX swaps the container list
         document.body.addEventListener('htmx:afterSwap', function(evt) {
-            if (evt.detail.target.id === 'prune-result') {
-                evt.detail.target.classList.remove('hidden');
-                setTimeout(() => evt.detail.target.classList.add('hidden'), 4000);
-            }
+            if (evt.detail.target.id === 'container-list') { filterContainers(); }
         });
     </script>
 </body>
