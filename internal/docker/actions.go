@@ -25,6 +25,32 @@ type ContainerInfo struct {
 	Created int64
 }
 
+// Summary holds aggregate container counts for the dashboard strip.
+type Summary struct {
+	Total     int
+	Running   int
+	Stopped   int
+	Unhealthy int
+}
+
+// Summarize computes aggregate counts from a container list.
+func Summarize(containers []ContainerInfo) Summary {
+	var s Summary
+	s.Total = len(containers)
+	for _, c := range containers {
+		switch c.State {
+		case "running":
+			s.Running++
+		case "exited", "dead":
+			s.Stopped++
+		}
+		if strings.Contains(c.Status, "unhealthy") {
+			s.Unhealthy++
+		}
+	}
+	return s
+}
+
 // StatsSnapshot holds a single point-in-time resource reading.
 type StatsSnapshot struct {
 	CPUPercent float64

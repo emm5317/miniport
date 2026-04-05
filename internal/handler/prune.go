@@ -2,39 +2,42 @@ package handler
 
 import (
 	"fmt"
-
-	"github.com/gofiber/fiber/v3"
+	"net/http"
 )
 
-func (h *Handler) PruneContainers(c fiber.Ctx) error {
-	freed, err := h.docker.PruneContainers(c.Context())
+func (h *Handler) PruneContainers(w http.ResponseWriter, r *http.Request) {
+	freed, err := h.docker.PruneContainers(r.Context())
 	if err != nil {
-		return c.Status(500).SendString(err.Error())
+		httpError(w, err.Error(), 500)
+		return
 	}
-	return c.SendString(fmt.Sprintf("Reclaimed %s", FormatBytes(freed)))
+	fmt.Fprintf(w, "Reclaimed %s", FormatBytes(freed))
 }
 
-func (h *Handler) PruneImages(c fiber.Ctx) error {
-	freed, err := h.docker.PruneImages(c.Context())
+func (h *Handler) PruneImages(w http.ResponseWriter, r *http.Request) {
+	freed, err := h.docker.PruneImages(r.Context())
 	if err != nil {
-		return c.Status(500).SendString(err.Error())
+		httpError(w, err.Error(), 500)
+		return
 	}
-	return c.SendString(fmt.Sprintf("Reclaimed %s", FormatBytes(freed)))
+	fmt.Fprintf(w, "Reclaimed %s", FormatBytes(freed))
 }
 
-func (h *Handler) PruneVolumes(c fiber.Ctx) error {
-	freed, err := h.docker.PruneVolumes(c.Context())
+func (h *Handler) PruneVolumes(w http.ResponseWriter, r *http.Request) {
+	freed, err := h.docker.PruneVolumes(r.Context())
 	if err != nil {
-		return c.Status(500).SendString(err.Error())
+		httpError(w, err.Error(), 500)
+		return
 	}
-	return c.SendString(fmt.Sprintf("Reclaimed %s", FormatBytes(freed)))
+	fmt.Fprintf(w, "Reclaimed %s", FormatBytes(freed))
 }
 
-func (h *Handler) PruneNetworks(c fiber.Ctx) error {
-	if err := h.docker.PruneNetworks(c.Context()); err != nil {
-		return c.Status(500).SendString(err.Error())
+func (h *Handler) PruneNetworks(w http.ResponseWriter, r *http.Request) {
+	if err := h.docker.PruneNetworks(r.Context()); err != nil {
+		httpError(w, err.Error(), 500)
+		return
 	}
-	return c.SendString("Networks pruned")
+	w.Write([]byte("Networks pruned"))
 }
 
 func FormatBytes(b uint64) string {

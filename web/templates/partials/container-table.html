@@ -1,3 +1,4 @@
+{{template "partials/summary-strip.html" .Summary}}
 <table class="w-full text-sm">
     <thead>
         <tr class="text-left text-gray-500 border-b border-gray-800">
@@ -11,7 +12,7 @@
     </thead>
     <tbody>
         {{range .Containers}}
-        <tr class="border-b border-gray-800/50 hover:bg-gray-900/50" x-data="{ confirm: false }">
+        <tr class="border-b border-gray-800/50 hover:bg-gray-900/50">
             <td class="py-3 pr-4 font-mono text-sm">{{.Name}}</td>
             <td class="py-3 pr-4 text-gray-400 text-xs max-w-xs truncate">{{.Image}}</td>
             <td class="py-3 pr-4">
@@ -54,25 +55,21 @@
                             class="px-2 py-1 text-xs bg-gray-800 rounded hover:bg-gray-700">
                         Stats
                     </button>
-                    <template x-if="!confirm">
-                        <button @click="confirm = true"
-                                class="px-2 py-1 text-xs bg-gray-800 rounded hover:bg-red-900/50 text-red-400">
-                            Remove
+                    <button onclick="this.hidden=true;this.nextElementSibling.hidden=false"
+                            class="px-2 py-1 text-xs bg-gray-800 rounded hover:bg-red-900/50 text-red-400">
+                        Remove
+                    </button>
+                    <span class="flex gap-1" hidden>
+                        <button hx-delete="/containers/{{.ID}}" hx-swap="none"
+                                onclick="this.parentElement.hidden=true;this.parentElement.previousElementSibling.hidden=false"
+                                class="px-2 py-1 text-xs bg-red-700 rounded text-white">
+                            Confirm
                         </button>
-                    </template>
-                    <template x-if="confirm">
-                        <span class="flex gap-1">
-                            <button hx-delete="/containers/{{.ID}}" hx-swap="none"
-                                    @click="confirm = false"
-                                    class="px-2 py-1 text-xs bg-red-700 rounded text-white">
-                                Confirm
-                            </button>
-                            <button @click="confirm = false"
-                                    class="px-2 py-1 text-xs bg-gray-700 rounded">
-                                Cancel
-                            </button>
-                        </span>
-                    </template>
+                        <button onclick="this.parentElement.hidden=true;this.parentElement.previousElementSibling.hidden=false"
+                                class="px-2 py-1 text-xs bg-gray-700 rounded">
+                            Cancel
+                        </button>
+                    </span>
                 </div>
             </td>
         </tr>

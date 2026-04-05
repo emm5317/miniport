@@ -1,12 +1,13 @@
 package handler
 
-import "github.com/gofiber/fiber/v3"
+import "net/http"
 
-func (h *Handler) Stats(c fiber.Ctx) error {
-	id := c.Params("id")
-	stats, err := h.docker.Stats(c.Context(), id)
+func (h *Handler) Stats(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	stats, err := h.docker.Stats(r.Context(), id)
 	if err != nil {
-		return c.Status(500).SendString(err.Error())
+		httpError(w, err.Error(), 500)
+		return
 	}
-	return c.Render("partials/stats-modal", fiber.Map{"ContainerID": id, "Stats": stats})
+	renderPartial(w, "partials/stats-modal.html", map[string]any{"ContainerID": id, "Stats": stats})
 }

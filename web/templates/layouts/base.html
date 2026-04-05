@@ -4,47 +4,43 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MiniPort</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="/static/style.css">
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
-    <style>pre { white-space: pre-wrap; word-break: break-all; }</style>
 </head>
 <body class="bg-gray-950 text-gray-100 min-h-screen">
     <nav class="border-b border-gray-800 px-6 py-4 flex items-center justify-between">
         <h1 class="text-lg font-semibold tracking-tight">MiniPort</h1>
-        <div class="flex gap-2" x-data="{ open: false }">
-            <button @click="open = !open"
-                    class="px-3 py-1.5 text-sm bg-gray-800 text-gray-300 rounded hover:bg-gray-700">
+        <details class="relative">
+            <summary class="px-3 py-1.5 text-sm bg-gray-800 text-gray-300 rounded hover:bg-gray-700 cursor-pointer list-none">
                 Prune ▾
-            </button>
-            <div x-show="open" @click.outside="open = false"
-                 class="absolute right-6 top-14 bg-gray-900 border border-gray-700 rounded shadow-lg z-10">
+            </summary>
+            <div class="absolute right-0 top-full mt-1 bg-gray-900 border border-gray-700 rounded shadow-lg z-10">
                 <button hx-post="/prune/containers" hx-target="#prune-result" hx-swap="innerHTML"
-                        @click="open = false"
+                        onclick="this.closest('details').removeAttribute('open')"
                         class="block w-full text-left px-4 py-2 text-sm hover:bg-gray-800">
                     Containers
                 </button>
                 <button hx-post="/prune/images" hx-target="#prune-result" hx-swap="innerHTML"
-                        @click="open = false"
+                        onclick="this.closest('details').removeAttribute('open')"
                         class="block w-full text-left px-4 py-2 text-sm hover:bg-gray-800">
                     Images
                 </button>
                 <button hx-post="/prune/volumes" hx-target="#prune-result" hx-swap="innerHTML"
-                        @click="open = false"
+                        onclick="this.closest('details').removeAttribute('open')"
                         class="block w-full text-left px-4 py-2 text-sm hover:bg-gray-800">
                     Volumes
                 </button>
                 <button hx-post="/prune/networks" hx-target="#prune-result" hx-swap="innerHTML"
-                        @click="open = false"
+                        onclick="this.closest('details').removeAttribute('open')"
                         class="block w-full text-left px-4 py-2 text-sm hover:bg-gray-800">
                     Networks
                 </button>
             </div>
-        </div>
+        </details>
     </nav>
     <div id="prune-result" class="hidden px-6 py-2 text-sm text-emerald-400 bg-emerald-950/30"></div>
     <main class="max-w-7xl mx-auto px-6 py-6">
-        {{embed}}
+        {{template "content" .}}
     </main>
     <script>
         // Show prune result briefly then hide

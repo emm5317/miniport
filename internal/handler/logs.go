@@ -1,13 +1,22 @@
 package handler
 
-import "github.com/gofiber/fiber/v3"
+import (
+	"net/http"
+	"strconv"
+)
 
-func (h *Handler) Logs(c fiber.Ctx) error {
-	id := c.Params("id")
-	lines := fiber.Query(c, "lines", 200)
-	logs, err := h.docker.Logs(c.Context(), id, lines)
-	if err != nil {
-		return c.Status(500).SendString(err.Error())
+func (h *Handler) Logs(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	lines := h.LogTailLines
+	if v := r.URL.Query().Get("lines"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			lines = n
+		}
 	}
-	return c.Render("partials/logs-panel", fiber.Map{"ContainerID": id, "Logs": logs})
+	logs, err := h.docker.Logs(r.Context(), id, lines)
+	if err != nil {
+		httpError(w, err.Error(), 500)
+		return
+	}
+	renderPartial(w, "partials/logs-panel.html", map[string]any{"ContainerID": id, "Logs": logs})
 }

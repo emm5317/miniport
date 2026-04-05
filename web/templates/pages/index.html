@@ -1,7 +1,9 @@
+{{define "content"}}
 <div id="container-list"
      hx-get="/containers"
      hx-trigger="every 10s, refresh-containers from:body"
      hx-swap="innerHTML">
-    {{template "partials/container-table" .}}
+    {{template "partials/container-table.html" .}}
 </div>
 <div id="detail-panel" class="mt-6"></div>
+{{end}}

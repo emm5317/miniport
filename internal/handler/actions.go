@@ -1,35 +1,39 @@
 package handler
 
-import "github.com/gofiber/fiber/v3"
+import "net/http"
 
-func (h *Handler) Start(c fiber.Ctx) error {
-	if err := h.docker.Start(c.Context(), c.Params("id")); err != nil {
-		return c.Status(500).SendString(err.Error())
+func (h *Handler) Start(w http.ResponseWriter, r *http.Request) {
+	if err := h.docker.Start(r.Context(), r.PathValue("id")); err != nil {
+		httpError(w, err.Error(), 500)
+		return
 	}
-	c.Set("HX-Trigger", "refresh-containers")
-	return c.SendStatus(200)
+	w.Header().Set("HX-Trigger", "refresh-containers")
+	w.WriteHeader(200)
 }
 
-func (h *Handler) Stop(c fiber.Ctx) error {
-	if err := h.docker.Stop(c.Context(), c.Params("id")); err != nil {
-		return c.Status(500).SendString(err.Error())
+func (h *Handler) Stop(w http.ResponseWriter, r *http.Request) {
+	if err := h.docker.Stop(r.Context(), r.PathValue("id")); err != nil {
+		httpError(w, err.Error(), 500)
+		return
 	}
-	c.Set("HX-Trigger", "refresh-containers")
-	return c.SendStatus(200)
+	w.Header().Set("HX-Trigger", "refresh-containers")
+	w.WriteHeader(200)
 }
 
-func (h *Handler) Restart(c fiber.Ctx) error {
-	if err := h.docker.Restart(c.Context(), c.Params("id")); err != nil {
-		return c.Status(500).SendString(err.Error())
+func (h *Handler) Restart(w http.ResponseWriter, r *http.Request) {
+	if err := h.docker.Restart(r.Context(), r.PathValue("id")); err != nil {
+		httpError(w, err.Error(), 500)
+		return
 	}
-	c.Set("HX-Trigger", "refresh-containers")
-	return c.SendStatus(200)
+	w.Header().Set("HX-Trigger", "refresh-containers")
+	w.WriteHeader(200)
 }
 
-func (h *Handler) Remove(c fiber.Ctx) error {
-	if err := h.docker.Remove(c.Context(), c.Params("id")); err != nil {
-		return c.Status(500).SendString(err.Error())
+func (h *Handler) Remove(w http.ResponseWriter, r *http.Request) {
+	if err := h.docker.Remove(r.Context(), r.PathValue("id")); err != nil {
+		httpError(w, err.Error(), 500)
+		return
 	}
-	c.Set("HX-Trigger", "refresh-containers")
-	return c.SendStatus(200)
+	w.Header().Set("HX-Trigger", "refresh-containers")
+	w.WriteHeader(200)
 }
