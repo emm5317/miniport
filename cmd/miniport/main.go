@@ -12,17 +12,16 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/logger"
 	recoverer "github.com/gofiber/fiber/v3/middleware/recover"
-	fstatic "github.com/gofiber/fiber/v3/middleware/static"
 	"github.com/gofiber/template/html/v2"
 
-	"github.com/emm5317/miniport/internal/config"
 	"github.com/emm5317/miniport/internal/docker"
 	"github.com/emm5317/miniport/internal/handler"
 	"github.com/emm5317/miniport/web"
 )
 
 func main() {
-	cfg := config.Load()
+	host := envOr("MINIPORT_HOST", "127.0.0.1")
+	port := envOr("MINIPORT_PORT", "8092")
 
 	dockerSvc, err := docker.NewService()
 	if err != nil {
@@ -35,9 +34,7 @@ func main() {
 	})
 
 	app := fiber.New(fiber.Config{
-		Views:             engine,
-		PassLocalsToViews: true,
-		BodyLimit:         1 * 1024 * 1024,
+		Views: engine,
 	})
 	app.Use(logger.New())
 	app.Use(recoverer.New())
@@ -57,9 +54,7 @@ func main() {
 	app.Post("/prune/images", h.PruneImages)
 	app.Post("/prune/volumes", h.PruneVolumes)
 	app.Post("/prune/networks", h.PruneNetworks)
-	app.Get("/static/*", fstatic.New("", fstatic.Config{FS: web.Static}))
-
-	addr := fmt.Sprintf("%s:%s", cfg.Host, cfg.Port)
+	addr := fmt.Sprintf("%s:%s", host, port)
 	go func() {
 		if err := app.Listen(addr); err != nil {
 			log.Fatalf("Server: %v", err)
@@ -73,4 +68,11 @@ func main() {
 	if err := app.ShutdownWithTimeout(10 * time.Second); err != nil {
 		log.Printf("Shutdown error: %v", err)
 	}
+}
+
+func envOr(key, fallback string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return fallback
 }
