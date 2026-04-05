@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
@@ -28,7 +29,8 @@ func main() {
 		log.Fatalf("Docker: %v", err)
 	}
 
-	engine := html.NewFileSystem(http.FS(web.Templates), ".html")
+	sub, _ := fs.Sub(web.Templates, "templates")
+	engine := html.NewFileSystem(http.FS(sub), ".html")
 	engine.AddFuncMap(map[string]any{
 		"formatBytes": handler.FormatBytes,
 	})
