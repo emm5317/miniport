@@ -29,12 +29,18 @@
                 {{end}}
             </td>
             <td class="py-3 pr-4 text-gray-400 text-xs">{{.Status}}</td>
-            {{if eq .State "running"}}
-            <td class="py-3 pr-4 text-gray-600 text-xs" colspan="2"
-                hx-get="/containers/{{.ID}}/inline-stats"
-                hx-trigger="load, every 15s"
-                hx-swap="outerHTML">
-                <span class="animate-pulse">...</span>
+            {{if and (eq .State "running") .Stats}}
+            <td class="py-3 pr-4 font-mono text-xs">
+                <div class="flex items-center gap-1.5">
+                    <div class="stat-bar"><div class="stat-fill bg-emerald-400" style="width:{{printf "%.0f" (capPct .Stats.CPUPercent)}}%"></div></div>
+                    <span>{{printf "%.1f" .Stats.CPUPercent}}%</span>
+                </div>
+            </td>
+            <td class="py-3 pr-4 font-mono text-xs">
+                <div class="flex items-center gap-1.5">
+                    <div class="stat-bar"><div class="stat-fill bg-cyan-400" style="width:{{printf "%.0f" (capPct .Stats.MemPercent)}}%"></div></div>
+                    <span>{{printf "%.1f" .Stats.MemPercent}}%</span>
+                </div>
             </td>
             {{else}}
             <td class="py-3 pr-4 text-gray-600 text-xs">—</td>
