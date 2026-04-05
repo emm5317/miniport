@@ -18,6 +18,9 @@ func InitTemplates(fsys fs.FS, funcMap template.FuncMap) {
 			"partials/*.html",
 		),
 	)
+	for _, t := range templates.Templates() {
+		log.Printf("template: %q", t.Name())
+	}
 }
 
 // renderPage renders a page inside the base layout.
