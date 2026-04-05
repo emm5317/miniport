@@ -9,28 +9,30 @@ A lightweight Docker and systemd dashboard. Single Go binary, no database, no co
 ## Features
 
 ### Containers
-- **Dashboard** — live container table with search, state filters (All/Running/Stopped), and sortable columns
-- **Inline stats** — CPU and memory bars rendered per container row, updated via background collector
-- **Sparkline charts** — SVG CPU and memory trend lines from ring buffer history
-- **Actions** — start, stop, restart, remove with toast notifications
-- **Logs** — configurable tail lines (50/100/500/1000), in-log search with highlighting, live streaming via 2s polling, pause/resume on scroll, copy-to-clipboard
+- **Dashboard** — 7-column CSS grid table with search, state filters (All/Running/Stopped), and sortable columns
+- **Inline stats** — CPU and memory bars with raw MB values, updated via background collector
+- **Sparkline charts** — SVG CPU and memory trend lines from ring buffer history, stacked with port badges
+- **Actions** — icon buttons (Stop/Start, Restart, Logs) with overflow menu (Stats, Inspect, Remove) via CSS-only `<details>` dropdown
+- **Stopped containers** — visually muted rows with reduced opacity
+- **Logs** — configurable tail lines (50/100/500/1000), in-log search with highlighting, live streaming via 2s polling, pause/resume on scroll, copy-to-clipboard, server-side syntax coloring (timestamps, key=value pairs, error highlighting)
 - **Stats panel** — live CPU, memory, network, and disk I/O with history sparklines
 - **Inspect panel** — container config, environment (masked by default), ports, networks, mounts, and labels in CSS-only tabbed interface
-- **Prune** — clean up containers, images, volumes, and networks
+- **Prune** — clean up containers, images, volumes, and networks via nav dropdown
 
 ### Host
-- **System metrics** — live CPU, memory, disk, and network stats from the host (Linux only, via `/proc`)
-- **Uptime** — displayed in the host strip above the container summary
+- **System metrics** — 5 metric cards (CPU, memory, disk, network, uptime) with thin progress bars (Linux only, via `/proc`)
 
 ### Systemd Services
-- **Service monitoring** — track configured systemd services alongside Docker containers
+- **Service monitoring** — CSS grid table alongside Docker containers with matching visual style
 - **Live status** — active/inactive/failed state with CPU% and memory usage
-- **Actions** — start, stop, restart with toast notifications
-- **Logs** — journal output with the same search, streaming, and controls as container logs
+- **Actions** — icon buttons (Stop/Start, Restart) with Logs
+- **Logs** — journal output with syntax coloring, search, streaming, and all container log controls
 - **Zero dependencies** — uses `systemctl` and `journalctl` via `os/exec`, no D-Bus library
 
 ### General
+- **Dark theme** — CSS custom properties with semantic color tokens, monospace-forward typography
 - **Toast notifications** — success/error feedback on all actions
+- **Responsive layout** — stacked card layout below 900px, hidden sparklines on mobile
 - **Health endpoint** — `GET /healthz` for uptime monitors
 - **Auto-refresh** — container and service tables poll every 10s, stats every 5s
 
@@ -43,7 +45,7 @@ A lightweight Docker and systemd dashboard. Single Go binary, no database, no co
 | Systemd | `systemctl` / `journalctl` via `os/exec` (Linux only) |
 | Frontend | HTMX (only external JS dependency) |
 | Templates | Go `html/template` via `go:embed` |
-| CSS | Embedded stylesheet, no CDN, no framework |
+| CSS | Embedded stylesheet with CSS custom properties, no CDN, no framework |
 
 No JavaScript build step. No database. No framework. All state comes from the Docker daemon and systemd.
 

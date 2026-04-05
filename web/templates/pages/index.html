@@ -5,7 +5,6 @@
     {{template "container-table.html" .}}
 </div>
 {{if .Services}}
-<h2 class="text-sm font-medium text-gray-500 mt-6 mb-3">Services</h2>
 <div id="service-list"
      hx-get="/services"
      hx-trigger="every 10s, refresh-services from:body"
@@ -13,4 +12,4 @@
     {{template "service-table.html" .}}
 </div>
 {{end}}
-<div id="detail-panel" class="mt-6"></div>
+<div id="detail-panel" style="margin-top:1.5rem"></div>
