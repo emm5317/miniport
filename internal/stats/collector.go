@@ -114,13 +114,21 @@ func NewCollector(dockerSvc *docker.Service, interval time.Duration, capacity in
 	}
 }
 
-// Start begins the background collection loop. Blocks until ctx is cancelled.
+// maxConcurrentStats limits the number of parallel Docker stats calls.
+const maxConcurrentStats = 10
+
+// Start begins the background collection loop. It also listens for Docker
+// container events to trigger immediate re-collection on state changes.
+// Blocks until ctx is cancelled.
 func (c *Collector) Start(ctx context.Context) {
 	ticker := time.NewTicker(c.interval)
 	defer ticker.Stop()
 
-	// Collect immediately on start
+	// Collect immediately on start.
 	c.collect(ctx)
+
+	// Start Docker events listener for reactive updates.
+	eventCh, errCh := c.docker.ContainerEvents(ctx)
 
 	for {
 		select {
@@ -128,6 +136,20 @@ func (c *Collector) Start(ctx context.Context) {
 			return
 		case <-ticker.C:
 			c.collect(ctx)
+		case _, ok := <-eventCh:
+			if !ok {
+				// Events channel closed; fall back to polling only.
+				eventCh = nil
+				continue
+			}
+			c.collect(ctx)
+		case err, ok := <-errCh:
+			if ok && err != nil {
+				log.Printf("collector: docker events error: %v", err)
+			}
+			// Reconnect events on next tick; nil out to avoid busy loop.
+			eventCh = nil
+			errCh = nil
 		}
 	}
 }
@@ -152,6 +174,7 @@ func (c *Collector) collect(ctx context.Context) {
 	running := make(map[string]bool)
 	var wg sync.WaitGroup
 	var mu sync.Mutex
+	sem := make(chan struct{}, maxConcurrentStats)
 	type result struct {
 		id    string
 		stats *docker.StatsSnapshot
@@ -166,6 +189,8 @@ func (c *Collector) collect(ctx context.Context) {
 		wg.Add(1)
 		go func(id string) {
 			defer wg.Done()
+			sem <- struct{}{}
+			defer func() { <-sem }()
 			stats, err := c.docker.Stats(ctx, id)
 			if err != nil {
 				return

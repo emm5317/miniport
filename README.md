@@ -78,6 +78,7 @@ Listens on `127.0.0.1:8092` by default. Configure via environment variables:
 | `MINIPORT_LOG_REQUESTS` | `false` | Enable HTTP request logging |
 | `MINIPORT_STATS_INTERVAL` | `15` | Background stats collection interval (seconds) |
 | `MINIPORT_SERVICES` | *(empty)* | Comma-separated systemd service names to monitor |
+| `MINIPORT_AUTH` | *(empty)* | Path to auth file for HTTP Basic Authentication (see [Security](#security)) |
 
 ## Deploy with systemd
 
@@ -102,7 +103,35 @@ Example `/opt/miniport/.env`:
 MINIPORT_SERVICES=voicetask,caddy,postgresql
 ```
 
-Put behind a reverse proxy (Caddy, nginx) with authentication — the Docker socket is root-equivalent access.
+Put behind a reverse proxy (Caddy, nginx) with TLS — the Docker socket is root-equivalent access.
+
+## Security
+
+MiniPort includes optional HTTP Basic Authentication. To enable it:
+
+1. Create an auth file with `username:sha256hex` entries:
+   ```bash
+   # Generate a password hash
+   echo -n 'your-password' | sha256sum | cut -d' ' -f1
+
+   # Create the auth file
+   echo "admin:$(echo -n 'your-password' | sha256sum | cut -d' ' -f1)" > /opt/miniport/auth
+   ```
+
+2. Set the `MINIPORT_AUTH` environment variable:
+   ```bash
+   MINIPORT_AUTH=/opt/miniport/auth ./miniport
+   ```
+
+The `/healthz` endpoint is always unauthenticated for monitoring probes.
+
+Additional security features:
+- **CSRF protection** — Origin/Referer validation on all state-changing requests
+- **Security headers** — `X-Content-Type-Options`, `X-Frame-Options`, `Content-Security-Policy`, `Referrer-Policy`
+- **Server timeouts** — Read, write, and idle timeouts to prevent slowloris attacks
+- **Localhost by default** — Binds to `127.0.0.1`, not `0.0.0.0`
+
+See [SECURITY.md](SECURITY.md) for the full security policy.
 
 ## Resource Usage
 
