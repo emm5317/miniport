@@ -74,6 +74,7 @@ func main() {
 	mux.HandleFunc("DELETE /containers/{id}", h.Remove)
 	mux.HandleFunc("GET /containers/{id}/logs", h.Logs)
 	mux.HandleFunc("GET /containers/{id}/stats", h.Stats)
+	mux.HandleFunc("GET /containers/{id}/inspect", h.Inspect)
 	mux.HandleFunc("POST /prune/containers", h.PruneContainers)
 	mux.HandleFunc("POST /prune/images", h.PruneImages)
 	mux.HandleFunc("POST /prune/volumes", h.PruneVolumes)

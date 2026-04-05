@@ -1,19 +1,149 @@
-<div class="bg-gray-900 rounded-lg border border-gray-800 p-4">
-    <div class="flex items-center justify-between mb-3">
+<div class="bg-gray-900 rounded-lg border border-gray-800 p-4" id="logs-wrapper">
+    <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
         <h3 class="text-sm font-medium text-gray-300">
             Logs — <span class="font-mono text-xs">{{.ContainerID}}</span>
         </h3>
-        <div class="flex gap-2">
+        <div class="flex gap-2 items-center flex-wrap">
+            <select id="log-line-count" onchange="reloadLogs('{{.ContainerID}}')"
+                    class="log-select">
+                <option value="50" {{if eq .Lines 50}}selected{{end}}>50</option>
+                <option value="100" {{if eq .Lines 100}}selected{{end}}>100</option>
+                <option value="500" {{if eq .Lines 500}}selected{{end}}>500</option>
+                <option value="1000" {{if eq .Lines 1000}}selected{{end}}>1000</option>
+            </select>
+            <input type="text" id="log-search" placeholder="Search logs…"
+                   oninput="highlightLogSearch()" class="search-input" style="width:10rem">
+            <button id="log-stream-btn" onclick="toggleLogStream('{{.ContainerID}}')"
+                    class="px-2 py-1 text-xs bg-gray-800 rounded hover:bg-gray-700 text-emerald-300">
+                ▶ Stream
+            </button>
             <button onclick="navigator.clipboard.writeText(document.getElementById('log-content').innerText)"
                     class="px-2 py-1 text-xs bg-gray-800 rounded hover:bg-gray-700">
                 Copy
             </button>
-            <button onclick="document.getElementById('detail-panel').replaceChildren()"
+            <button onclick="document.getElementById('detail-panel').replaceChildren(); stopLogStream();"
                     class="px-2 py-1 text-xs bg-gray-800 rounded hover:bg-gray-700">
                 Close
             </button>
         </div>
     </div>
     <pre id="log-content"
-         class="text-xs font-mono text-gray-400 overflow-x-auto max-h-96 overflow-y-auto leading-relaxed">{{.Logs}}</pre>
+         class="log-content text-xs font-mono text-gray-400 overflow-x-auto overflow-y-auto leading-relaxed"
+         onscroll="handleLogScroll()">{{.Logs}}</pre>
 </div>
+<script>
+(function() {
+    var logStreamTimer = null;
+    var logStreamPaused = false;
+    var logAutoScroll = true;
+    var logTimestamp = new Date().toISOString();
+
+    window.toggleLogStream = function(id) {
+        var btn = document.getElementById('log-stream-btn');
+        if (logStreamTimer) {
+            stopLogStream();
+            return;
+        }
+        logStreamPaused = false;
+        logAutoScroll = true;
+        btn.textContent = '\u23F8 Pause';
+        btn.classList.remove('text-emerald-300');
+        btn.classList.add('text-yellow-300');
+        logTimestamp = new Date().toISOString();
+        logStreamTimer = setInterval(function() {
+            if (logStreamPaused) return;
+            fetch('/containers/' + id + '/logs?stream=true&since=' + encodeURIComponent(logTimestamp))
+                .then(function(resp) {
+                    var ts = resp.headers.get('X-Log-Timestamp');
+                    if (ts) logTimestamp = ts;
+                    if (resp.status === 204) return '';
+                    return resp.text();
+                })
+                .then(function(text) {
+                    if (!text) return;
+                    var el = document.getElementById('log-content');
+                    if (!el) { stopLogStream(); return; }
+                    el.insertAdjacentText('beforeend', text);
+                    if (logAutoScroll) el.scrollTop = el.scrollHeight;
+                    highlightLogSearch();
+                });
+        }, 2000);
+    };
+
+    window.stopLogStream = function() {
+        if (logStreamTimer) { clearInterval(logStreamTimer); logStreamTimer = null; }
+        var btn = document.getElementById('log-stream-btn');
+        if (btn) {
+            btn.textContent = '\u25B6 Stream';
+            btn.classList.remove('text-yellow-300');
+            btn.classList.add('text-emerald-300');
+        }
+    };
+
+    window.handleLogScroll = function() {
+        var el = document.getElementById('log-content');
+        if (!el) return;
+        var atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 30;
+        logAutoScroll = atBottom;
+        if (!atBottom && logStreamTimer && !logStreamPaused) {
+            logStreamPaused = true;
+            var btn = document.getElementById('log-stream-btn');
+            if (btn) { btn.textContent = '\u25B6 Resume'; btn.classList.remove('text-yellow-300'); btn.classList.add('text-emerald-300'); }
+        } else if (atBottom && logStreamPaused) {
+            logStreamPaused = false;
+            var btn = document.getElementById('log-stream-btn');
+            if (btn) { btn.textContent = '\u23F8 Pause'; btn.classList.remove('text-emerald-300'); btn.classList.add('text-yellow-300'); }
+        }
+    };
+
+    window.highlightLogSearch = function() {
+        var el = document.getElementById('log-content');
+        var q = (document.getElementById('log-search') || {}).value || '';
+        if (!el) return;
+        // Use TreeWalker to safely highlight text nodes without innerHTML
+        // First, remove existing marks by replacing them with their text content
+        var marks = el.querySelectorAll('mark.log-highlight');
+        for (var i = marks.length - 1; i >= 0; i--) {
+            var parent = marks[i].parentNode;
+            parent.replaceChild(document.createTextNode(marks[i].textContent), marks[i]);
+            parent.normalize();
+        }
+        if (!q) return;
+        var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null, false);
+        var nodesToSplit = [];
+        var lowerQ = q.toLowerCase();
+        while (walker.nextNode()) {
+            var node = walker.currentNode;
+            var text = node.textContent;
+            var idx = text.toLowerCase().indexOf(lowerQ);
+            if (idx !== -1) {
+                nodesToSplit.push({node: node, text: text, idx: idx});
+            }
+        }
+        for (var j = 0; j < nodesToSplit.length; j++) {
+            var info = nodesToSplit[j];
+            var before = info.text.substring(0, info.idx);
+            var match = info.text.substring(info.idx, info.idx + q.length);
+            var after = info.text.substring(info.idx + q.length);
+            var frag = document.createDocumentFragment();
+            if (before) frag.appendChild(document.createTextNode(before));
+            var mark = document.createElement('mark');
+            mark.className = 'log-highlight';
+            mark.textContent = match;
+            frag.appendChild(mark);
+            if (after) frag.appendChild(document.createTextNode(after));
+            info.node.parentNode.replaceChild(frag, info.node);
+        }
+    };
+
+    window.reloadLogs = function(id) {
+        stopLogStream();
+        var lines = document.getElementById('log-line-count').value;
+        htmx.ajax('GET', '/containers/' + id + '/logs?lines=' + lines, {target: '#detail-panel', swap: 'innerHTML'});
+    };
+
+    // Auto-scroll to bottom on initial load
+    var lc = document.getElementById('log-content');
+    if (lc) lc.scrollTop = lc.scrollHeight;
+})();
+</script>

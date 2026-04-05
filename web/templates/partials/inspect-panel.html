@@ -1,0 +1,187 @@
+<div class="bg-gray-900 rounded-lg border border-gray-800 p-4">
+    <div class="flex items-center justify-between mb-4">
+        <h3 class="text-sm font-medium text-gray-300">
+            Inspect — <span class="font-mono text-xs">{{.Name}}</span>
+        </h3>
+        <button onclick="document.getElementById('detail-panel').replaceChildren()"
+                class="px-2 py-1 text-xs bg-gray-800 rounded hover:bg-gray-700">
+            Close
+        </button>
+    </div>
+
+    <div class="inspect-tabs">
+        <input type="radio" name="inspect-tab" id="tab-config" checked class="hidden">
+        <input type="radio" name="inspect-tab" id="tab-network" class="hidden">
+        <input type="radio" name="inspect-tab" id="tab-mounts" class="hidden">
+        <input type="radio" name="inspect-tab" id="tab-labels" class="hidden">
+
+        <div class="flex gap-1 mb-4">
+            <label for="tab-config" class="inspect-tab-label">Config</label>
+            <label for="tab-network" class="inspect-tab-label">Network</label>
+            <label for="tab-mounts" class="inspect-tab-label">Mounts</label>
+            <label for="tab-labels" class="inspect-tab-label">Labels</label>
+        </div>
+
+        <!-- Config Tab -->
+        <div class="inspect-tab-content inspect-tab-config">
+            <table class="w-full text-sm">
+                <tbody>
+                    <tr class="border-b border-gray-800/50">
+                        <td class="py-2 pr-4 text-gray-500 text-xs font-medium" style="width:8rem">ID</td>
+                        <td class="py-2 font-mono text-xs">{{.ID}}</td>
+                    </tr>
+                    <tr class="border-b border-gray-800/50">
+                        <td class="py-2 pr-4 text-gray-500 text-xs font-medium">Image</td>
+                        <td class="py-2 font-mono text-xs">{{.Image}}</td>
+                    </tr>
+                    <tr class="border-b border-gray-800/50">
+                        <td class="py-2 pr-4 text-gray-500 text-xs font-medium">Command</td>
+                        <td class="py-2 font-mono text-xs">{{.Command}}</td>
+                    </tr>
+                    <tr class="border-b border-gray-800/50">
+                        <td class="py-2 pr-4 text-gray-500 text-xs font-medium">Created</td>
+                        <td class="py-2 text-xs">{{.Created}}</td>
+                    </tr>
+                    <tr class="border-b border-gray-800/50">
+                        <td class="py-2 pr-4 text-gray-500 text-xs font-medium">Restart</td>
+                        <td class="py-2 text-xs">{{.RestartPolicy}}</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="mt-4">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-gray-500 text-xs font-medium">Environment</span>
+                    {{if not .RevealEnv}}
+                    <button hx-get="/containers/{{.ID}}/inspect?reveal=true"
+                            hx-target="#detail-panel" hx-swap="innerHTML"
+                            class="px-2 py-1 text-xs bg-gray-800 rounded hover:bg-gray-700">
+                        Reveal Values
+                    </button>
+                    {{else}}
+                    <button hx-get="/containers/{{.ID}}/inspect"
+                            hx-target="#detail-panel" hx-swap="innerHTML"
+                            class="px-2 py-1 text-xs bg-gray-800 rounded hover:bg-gray-700">
+                        Hide Values
+                    </button>
+                    {{end}}
+                </div>
+                {{if .Env}}
+                <table class="w-full text-xs font-mono">
+                    <tbody>
+                        {{range .Env}}
+                        <tr class="border-b border-gray-800/50">
+                            <td class="py-1 pr-4 text-emerald-300" style="width:40%">{{.Key}}</td>
+                            <td class="py-1 text-gray-400">{{.Value}}</td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+                {{else}}
+                <div class="text-gray-600 text-xs">No environment variables</div>
+                {{end}}
+            </div>
+        </div>
+
+        <!-- Network Tab -->
+        <div class="inspect-tab-content inspect-tab-network">
+            {{if .Ports}}
+            <div class="mb-4">
+                <span class="text-gray-500 text-xs font-medium block mb-2">Port Bindings</span>
+                <table class="w-full text-xs font-mono">
+                    <thead>
+                        <tr class="text-left text-gray-500 border-b border-gray-800">
+                            <th class="pb-2 pr-4">Container</th>
+                            <th class="pb-2 pr-4">Host</th>
+                            <th class="pb-2">Proto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{range .Ports}}
+                        <tr class="border-b border-gray-800/50">
+                            <td class="py-1 pr-4">{{.Container}}</td>
+                            <td class="py-1 pr-4">{{.Host}}</td>
+                            <td class="py-1">{{.Protocol}}</td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+            </div>
+            {{end}}
+
+            {{if .Networks}}
+            <div>
+                <span class="text-gray-500 text-xs font-medium block mb-2">Networks</span>
+                <table class="w-full text-xs font-mono">
+                    <thead>
+                        <tr class="text-left text-gray-500 border-b border-gray-800">
+                            <th class="pb-2 pr-4">Name</th>
+                            <th class="pb-2 pr-4">IP</th>
+                            <th class="pb-2 pr-4">Gateway</th>
+                            <th class="pb-2">MAC</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{range .Networks}}
+                        <tr class="border-b border-gray-800/50">
+                            <td class="py-1 pr-4 text-cyan-400">{{.Name}}</td>
+                            <td class="py-1 pr-4">{{.IPAddress}}</td>
+                            <td class="py-1 pr-4">{{.Gateway}}</td>
+                            <td class="py-1">{{.MacAddr}}</td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+            </div>
+            {{else}}
+            <div class="text-gray-600 text-xs">No networks</div>
+            {{end}}
+        </div>
+
+        <!-- Mounts Tab -->
+        <div class="inspect-tab-content inspect-tab-mounts">
+            {{if .Mounts}}
+            <table class="w-full text-xs font-mono">
+                <thead>
+                    <tr class="text-left text-gray-500 border-b border-gray-800">
+                        <th class="pb-2 pr-4">Type</th>
+                        <th class="pb-2 pr-4">Source</th>
+                        <th class="pb-2 pr-4">Dest</th>
+                        <th class="pb-2">Mode</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range .Mounts}}
+                    <tr class="border-b border-gray-800/50">
+                        <td class="py-1 pr-4 text-yellow-300">{{.Type}}</td>
+                        <td class="py-1 pr-4 text-gray-400 truncate" style="max-width:16rem">{{.Source}}</td>
+                        <td class="py-1 pr-4">{{.Destination}}</td>
+                        <td class="py-1">{{.Mode}}</td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+            {{else}}
+            <div class="text-gray-600 text-xs">No mounts</div>
+            {{end}}
+        </div>
+
+        <!-- Labels Tab -->
+        <div class="inspect-tab-content inspect-tab-labels">
+            {{if .Labels}}
+            <table class="w-full text-xs font-mono">
+                <tbody>
+                    {{range $k, $v := .Labels}}
+                    <tr class="border-b border-gray-800/50">
+                        <td class="py-1 pr-4 text-blue-300" style="width:40%">{{$k}}</td>
+                        <td class="py-1 text-gray-400">{{$v}}</td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+            {{else}}
+            <div class="text-gray-600 text-xs">No labels</div>
+            {{end}}
+        </div>
+    </div>
+</div>

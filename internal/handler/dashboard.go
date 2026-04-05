@@ -49,6 +49,7 @@ func (h *Handler) Index(w http.ResponseWriter, r *http.Request) {
 	renderPage(w, "pages/index", map[string]any{
 		"Containers": rows,
 		"Summary":    summary,
+		"Host":       h.collector.HostLatest(),
 	})
 }
 
@@ -63,6 +64,7 @@ func (h *Handler) ContainerTable(w http.ResponseWriter, r *http.Request) {
 	renderPartial(w, "container-table.html", map[string]any{
 		"Containers": rows,
 		"Summary":    summary,
+		"Host":       h.collector.HostLatest(),
 	})
 }
 

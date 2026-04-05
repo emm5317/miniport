@@ -1,3 +1,4 @@
+{{template "host-strip.html" .}}
 {{template "summary-strip.html" .Summary}}
 <div class="flex items-center gap-4 mb-4">
     <input type="text" id="container-search" placeholder="Filter containers…"
@@ -92,6 +93,11 @@
                             hx-target="#detail-panel" hx-swap="innerHTML"
                             class="px-2 py-1 text-xs bg-gray-800 rounded hover:bg-gray-700">
                         Stats
+                    </button>
+                    <button hx-get="/containers/{{.ID}}/inspect"
+                            hx-target="#detail-panel" hx-swap="innerHTML"
+                            class="px-2 py-1 text-xs bg-gray-800 rounded hover:bg-gray-700">
+                        Inspect
                     </button>
                     <button hx-delete="/containers/{{.ID}}" hx-swap="none"
                             hx-confirm="Remove this container permanently?"

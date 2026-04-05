@@ -122,14 +122,26 @@ func (s *Service) Remove(ctx context.Context, id string) error {
 }
 
 func (s *Service) Logs(ctx context.Context, id string, lines int) (string, error) {
+	return s.LogsSince(ctx, id, lines, "")
+}
+
+// LogsSince fetches container logs, optionally only those after the given RFC3339 timestamp.
+func (s *Service) LogsSince(ctx context.Context, id string, lines int, since string) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, slowTimeout)
 	defer cancel()
 
-	reader, err := s.cli.ContainerLogs(ctx, id, container.LogsOptions{
+	opts := container.LogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,
-		Tail:       fmt.Sprintf("%d", lines),
-	})
+		Timestamps: since != "",
+	}
+	if since != "" {
+		opts.Since = since
+	} else {
+		opts.Tail = fmt.Sprintf("%d", lines)
+	}
+
+	reader, err := s.cli.ContainerLogs(ctx, id, opts)
 	if err != nil {
 		return "", err
 	}
@@ -142,7 +154,10 @@ func (s *Service) Logs(ctx context.Context, id string, lines int) (string, error
 
 	out := stdout.String()
 	if stderr.Len() > 0 {
-		out += "\n--- stderr ---\n" + stderr.String()
+		if out != "" {
+			out += "\n"
+		}
+		out += stderr.String()
 	}
 	return out, nil
 }
@@ -162,6 +177,12 @@ func (s *Service) Stats(ctx context.Context, id string) (*StatsSnapshot, error) 
 		return nil, err
 	}
 	return calculateStats(&stats), nil
+}
+
+func (s *Service) Inspect(ctx context.Context, id string) (dtypes.ContainerJSON, error) {
+	ctx, cancel := context.WithTimeout(ctx, defaultTimeout)
+	defer cancel()
+	return s.cli.ContainerInspect(ctx, id)
 }
 
 func (s *Service) PruneContainers(ctx context.Context) (uint64, error) {

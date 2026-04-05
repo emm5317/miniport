@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/emm5317/miniport/internal/docker"
+	"github.com/emm5317/miniport/internal/host"
 )
 
 // RingBuffer is a fixed-size circular buffer.
@@ -70,6 +71,7 @@ type Collector struct {
 
 	mu         sync.RWMutex
 	containers map[string]*RingBuffer[docker.StatsSnapshot]
+	host       *RingBuffer[host.HostSnapshot]
 }
 
 // NewCollector creates a new stats collector.
@@ -85,6 +87,7 @@ func NewCollector(dockerSvc *docker.Service, interval time.Duration, capacity in
 		interval:   interval,
 		capacity:   capacity,
 		containers: make(map[string]*RingBuffer[docker.StatsSnapshot]),
+		host:       NewRingBuffer[host.HostSnapshot](capacity),
 	}
 }
 
@@ -107,6 +110,15 @@ func (c *Collector) Start(ctx context.Context) {
 }
 
 func (c *Collector) collect(ctx context.Context) {
+	// Collect host metrics
+	if snap, err := host.Snapshot(); err != nil {
+		log.Printf("collector: host snapshot error: %v", err)
+	} else if snap != nil {
+		c.mu.Lock()
+		c.host.Push(*snap)
+		c.mu.Unlock()
+	}
+
 	containers, err := c.docker.List(ctx)
 	if err != nil {
 		log.Printf("collector: list error: %v", err)
@@ -187,6 +199,24 @@ func (c *Collector) ContainerLatest(id string) *docker.StatsSnapshot {
 		return nil
 	}
 	return &s
+}
+
+// HostLatest returns the most recent host snapshot, or nil if none.
+func (c *Collector) HostLatest() *host.HostSnapshot {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	s, ok := c.host.Last()
+	if !ok {
+		return nil
+	}
+	return &s
+}
+
+// HostHistory returns the host snapshot history.
+func (c *Collector) HostHistory() []host.HostSnapshot {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.host.Slice()
 }
 
 // AllLatest returns the latest stats for all tracked containers.
