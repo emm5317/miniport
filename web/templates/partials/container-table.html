@@ -6,6 +6,8 @@
             <th class="pb-3 pr-4 font-medium">Image</th>
             <th class="pb-3 pr-4 font-medium">State</th>
             <th class="pb-3 pr-4 font-medium">Status</th>
+            <th class="pb-3 pr-4 font-medium">CPU</th>
+            <th class="pb-3 pr-4 font-medium">Mem</th>
             <th class="pb-3 pr-4 font-medium">Ports</th>
             <th class="pb-3 font-medium">Actions</th>
         </tr>
@@ -27,6 +29,17 @@
                 {{end}}
             </td>
             <td class="py-3 pr-4 text-gray-400 text-xs">{{.Status}}</td>
+            {{if eq .State "running"}}
+            <td class="py-3 pr-4 text-gray-600 text-xs" colspan="2"
+                hx-get="/containers/{{.ID}}/inline-stats"
+                hx-trigger="load, every 15s"
+                hx-swap="outerHTML">
+                <span class="animate-pulse">...</span>
+            </td>
+            {{else}}
+            <td class="py-3 pr-4 text-gray-600 text-xs">—</td>
+            <td class="py-3 pr-4 text-gray-600 text-xs">—</td>
+            {{end}}
             <td class="py-3 pr-4 text-gray-400 text-xs font-mono">{{.Ports}}</td>
             <td class="py-3">
                 <div class="flex flex-wrap gap-1">
@@ -55,27 +68,16 @@
                             class="px-2 py-1 text-xs bg-gray-800 rounded hover:bg-gray-700">
                         Stats
                     </button>
-                    <button onclick="this.hidden=true;this.nextElementSibling.hidden=false"
+                    <button hx-delete="/containers/{{.ID}}" hx-swap="none"
                             class="px-2 py-1 text-xs bg-gray-800 rounded hover:bg-red-900/50 text-red-400">
                         Remove
                     </button>
-                    <span class="flex gap-1" hidden>
-                        <button hx-delete="/containers/{{.ID}}" hx-swap="none"
-                                onclick="this.parentElement.hidden=true;this.parentElement.previousElementSibling.hidden=false"
-                                class="px-2 py-1 text-xs bg-red-700 rounded text-white">
-                            Confirm
-                        </button>
-                        <button onclick="this.parentElement.hidden=true;this.parentElement.previousElementSibling.hidden=false"
-                                class="px-2 py-1 text-xs bg-gray-700 rounded">
-                            Cancel
-                        </button>
-                    </span>
                 </div>
             </td>
         </tr>
         {{end}}
         {{if not .Containers}}
-        <tr><td colspan="6" class="py-8 text-center text-gray-600">No containers found</td></tr>
+        <tr><td colspan="8" class="py-8 text-center text-gray-600">No containers found</td></tr>
         {{end}}
     </tbody>
 </table>

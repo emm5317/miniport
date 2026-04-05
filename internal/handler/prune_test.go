@@ -2,6 +2,26 @@ package handler
 
 import "testing"
 
+func TestCapPct(t *testing.T) {
+	tests := []struct {
+		input float64
+		want  float64
+	}{
+		{0, 0},
+		{50.5, 50.5},
+		{100, 100},
+		{150.3, 100},
+		{400, 100},
+		{-1, -1},
+	}
+	for _, tt := range tests {
+		got := CapPct(tt.input)
+		if got != tt.want {
+			t.Errorf("CapPct(%v) = %v, want %v", tt.input, got, tt.want)
+		}
+	}
+}
+
 func TestFormatBytes(t *testing.T) {
 	tests := []struct {
 		input uint64

@@ -1,0 +1,12 @@
+<td class="py-3 pr-4 font-mono text-xs">
+    <div class="flex items-center gap-1.5">
+        <div class="stat-bar"><div class="stat-fill bg-emerald-400" style="width:{{printf "%.0f" (capPct .CPUPercent)}}%"></div></div>
+        <span>{{printf "%.1f" .CPUPercent}}%</span>
+    </div>
+</td>
+<td class="py-3 pr-4 font-mono text-xs">
+    <div class="flex items-center gap-1.5">
+        <div class="stat-bar"><div class="stat-fill bg-cyan-400" style="width:{{printf "%.0f" (capPct .MemPercent)}}%"></div></div>
+        <span>{{printf "%.1f" .MemPercent}}%</span>
+    </div>
+</td>

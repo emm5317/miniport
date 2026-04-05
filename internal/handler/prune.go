@@ -40,6 +40,14 @@ func (h *Handler) PruneNetworks(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Networks pruned"))
 }
 
+// CapPct caps a percentage value at 100 (CPU% can exceed 100 on multi-core).
+func CapPct(v float64) float64 {
+	if v > 100 {
+		return 100
+	}
+	return v
+}
+
 func FormatBytes(b uint64) string {
 	const unit = 1024
 	if b < unit {

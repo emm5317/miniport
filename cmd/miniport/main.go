@@ -47,6 +47,7 @@ func main() {
 			}
 			return (a + b) * 100 / total
 		},
+		"capPct": handler.CapPct,
 	})
 
 	staticSub, _ := fs.Sub(web.Static, "static")
@@ -64,6 +65,7 @@ func main() {
 	mux.HandleFunc("DELETE /containers/{id}", h.Remove)
 	mux.HandleFunc("GET /containers/{id}/logs", h.Logs)
 	mux.HandleFunc("GET /containers/{id}/stats", h.Stats)
+	mux.HandleFunc("GET /containers/{id}/inline-stats", h.InlineStats)
 	mux.HandleFunc("POST /prune/containers", h.PruneContainers)
 	mux.HandleFunc("POST /prune/images", h.PruneImages)
 	mux.HandleFunc("POST /prune/volumes", h.PruneVolumes)
