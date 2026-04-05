@@ -2,7 +2,6 @@ package handler
 
 import (
 	"html/template"
-	"io"
 	"io/fs"
 	"log"
 	"net/http"
@@ -23,8 +22,23 @@ func InitTemplates(fsys fs.FS, funcMap template.FuncMap) {
 
 // renderPage renders a page template inside the base layout.
 func renderPage(w http.ResponseWriter, page string, data any) {
+	// Clone full set so partials are available, then inject page as "content"
+	t, err := templates.Clone()
+	if err != nil {
+		log.Printf("clone: %v", err)
+		http.Error(w, "render error", 500)
+		return
+	}
+	pageT := t.Lookup(page + ".html")
+	if pageT != nil {
+		if _, err := t.AddParseTree("content", pageT.Tree); err != nil {
+			log.Printf("add content: %v", err)
+			http.Error(w, "render error", 500)
+			return
+		}
+	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := renderWithLayout(w, page, data); err != nil {
+	if err := t.ExecuteTemplate(w, "layouts/base.html", data); err != nil {
 		log.Printf("render %s: %v", page, err)
 	}
 }
@@ -35,27 +49,6 @@ func renderPartial(w http.ResponseWriter, name string, data any) {
 	if err := templates.ExecuteTemplate(w, name, data); err != nil {
 		log.Printf("render %s: %v", name, err)
 	}
-}
-
-// renderWithLayout executes the page inside the base layout.
-func renderWithLayout(w io.Writer, page string, data any) error {
-	// Clone base layout and add the page content block
-	t, err := templates.Lookup("layouts/base.html").Clone()
-	if err != nil {
-		return err
-	}
-	// Add the page template as "content"
-	pageT := templates.Lookup(page + ".html")
-	if pageT == nil {
-		pageT = templates.Lookup(page)
-	}
-	if pageT != nil {
-		_, err = t.AddParseTree("content", pageT.Tree)
-		if err != nil {
-			return err
-		}
-	}
-	return t.Execute(w, data)
 }
 
 func httpError(w http.ResponseWriter, msg string, code int) {
