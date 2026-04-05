@@ -9,5 +9,5 @@ func (h *Handler) Stats(w http.ResponseWriter, r *http.Request) {
 		httpError(w, err.Error(), 500)
 		return
 	}
-	renderPartial(w, "partials/stats-modal.html", map[string]any{"ContainerID": id, "Stats": stats})
+	renderPartial(w, "stats-modal.html", map[string]any{"ContainerID": id, "Stats": stats})
 }

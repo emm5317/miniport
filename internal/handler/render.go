@@ -26,7 +26,7 @@ func InitTemplates(fsys fs.FS, funcMap template.FuncMap) {
 // renderPage renders a page inside the base layout.
 func renderPage(w http.ResponseWriter, name string, data any) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := templates.ExecuteTemplate(w, "layouts/base.html", data); err != nil {
+	if err := templates.ExecuteTemplate(w, "base.html", data); err != nil {
 		log.Printf("render %s: %v", name, err)
 	}
 }

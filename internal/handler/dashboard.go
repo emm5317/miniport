@@ -35,7 +35,7 @@ func (h *Handler) ContainerTable(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	summary := docker.Summarize(containers)
-	renderPartial(w, "partials/container-table.html", map[string]any{
+	renderPartial(w, "container-table.html", map[string]any{
 		"Containers": containers,
 		"Summary":    summary,
 	})

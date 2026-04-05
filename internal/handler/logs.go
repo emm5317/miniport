@@ -18,5 +18,5 @@ func (h *Handler) Logs(w http.ResponseWriter, r *http.Request) {
 		httpError(w, err.Error(), 500)
 		return
 	}
-	renderPartial(w, "partials/logs-panel.html", map[string]any{"ContainerID": id, "Logs": logs})
+	renderPartial(w, "logs-panel.html", map[string]any{"ContainerID": id, "Logs": logs})
 }
