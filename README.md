@@ -1,5 +1,9 @@
 # MiniPort
 
+<p align="center">
+  <img src="assets/logo.png" alt="MiniPort" width="400">
+</p>
+
 [![Go](https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go&logoColor=white)](https://go.dev)
 [![Docker](https://img.shields.io/badge/Docker-SDK-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/engine/api/sdk/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
