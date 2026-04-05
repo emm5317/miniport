@@ -8,7 +8,21 @@ import (
 
 	"github.com/emm5317/miniport/internal/docker"
 	"github.com/emm5317/miniport/internal/host"
+	"github.com/emm5317/miniport/internal/systemd"
 )
+
+// ServiceSnapshot holds a point-in-time reading of a systemd service.
+type ServiceSnapshot struct {
+	Name        string
+	ActiveState string
+	SubState    string
+	MemCurrent  uint64
+	CPUPercent  float64
+	StartedAt   string
+	NRestarts   int
+	Description string
+	UnitEnabled string
+}
 
 // RingBuffer is a fixed-size circular buffer.
 type RingBuffer[T any] struct {
@@ -72,10 +86,15 @@ type Collector struct {
 	mu         sync.RWMutex
 	containers map[string]*RingBuffer[docker.StatsSnapshot]
 	host       *RingBuffer[host.HostSnapshot]
+
+	serviceNames []string
+	services     map[string]*RingBuffer[ServiceSnapshot]
+	prevCPU      map[string]uint64
+	prevTime     map[string]time.Time
 }
 
 // NewCollector creates a new stats collector.
-func NewCollector(dockerSvc *docker.Service, interval time.Duration, capacity int) *Collector {
+func NewCollector(dockerSvc *docker.Service, interval time.Duration, capacity int, serviceNames []string) *Collector {
 	if capacity <= 0 {
 		capacity = 60
 	}
@@ -83,11 +102,15 @@ func NewCollector(dockerSvc *docker.Service, interval time.Duration, capacity in
 		interval = 15 * time.Second
 	}
 	return &Collector{
-		docker:     dockerSvc,
-		interval:   interval,
-		capacity:   capacity,
-		containers: make(map[string]*RingBuffer[docker.StatsSnapshot]),
-		host:       NewRingBuffer[host.HostSnapshot](capacity),
+		docker:       dockerSvc,
+		interval:     interval,
+		capacity:     capacity,
+		containers:   make(map[string]*RingBuffer[docker.StatsSnapshot]),
+		host:         NewRingBuffer[host.HostSnapshot](capacity),
+		serviceNames: serviceNames,
+		services:     make(map[string]*RingBuffer[ServiceSnapshot]),
+		prevCPU:      make(map[string]uint64),
+		prevTime:     make(map[string]time.Time),
 	}
 }
 
@@ -173,6 +196,48 @@ func (c *Collector) collect(ctx context.Context) {
 			delete(c.containers, id)
 		}
 	}
+
+	// Collect systemd service metrics
+	now := time.Now()
+	for _, name := range c.serviceNames {
+		info, err := systemd.Show(ctx, name)
+		if err != nil {
+			log.Printf("collector: service %s: %v", name, err)
+			continue
+		}
+		if info == nil {
+			continue
+		}
+
+		cpuPct := 0.0
+		if prev, ok := c.prevCPU[name]; ok && info.CPUNanos > prev {
+			dt := now.Sub(c.prevTime[name]).Seconds()
+			if dt > 0 {
+				cpuPct = float64(info.CPUNanos-prev) / (dt * 1e9) * 100
+			}
+		}
+		c.prevCPU[name] = info.CPUNanos
+		c.prevTime[name] = now
+
+		snap := ServiceSnapshot{
+			Name:        name,
+			ActiveState: info.ActiveState,
+			SubState:    info.SubState,
+			MemCurrent:  info.MemCurrent,
+			CPUPercent:  cpuPct,
+			StartedAt:   info.StartedAt,
+			NRestarts:   info.NRestarts,
+			Description: info.Description,
+			UnitEnabled: info.UnitEnabled,
+		}
+
+		buf, ok := c.services[name]
+		if !ok {
+			buf = NewRingBuffer[ServiceSnapshot](c.capacity)
+			c.services[name] = buf
+		}
+		buf.Push(snap)
+	}
 }
 
 // ContainerHistory returns the stats history for a container.
@@ -217,6 +282,35 @@ func (c *Collector) HostHistory() []host.HostSnapshot {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.host.Slice()
+}
+
+// AllServiceLatest returns the latest snapshot for all tracked services.
+func (c *Collector) AllServiceLatest() map[string]*ServiceSnapshot {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	out := make(map[string]*ServiceSnapshot, len(c.services))
+	for name, buf := range c.services {
+		if s, ok := buf.Last(); ok {
+			out[name] = &s
+		}
+	}
+	return out
+}
+
+// ServiceHistory returns the snapshot history for a service.
+func (c *Collector) ServiceHistory(name string) []ServiceSnapshot {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	buf, ok := c.services[name]
+	if !ok {
+		return nil
+	}
+	return buf.Slice()
+}
+
+// ServiceNames returns the configured service names.
+func (c *Collector) ServiceNames() []string {
+	return c.serviceNames
 }
 
 // AllLatest returns the latest stats for all tracked containers.

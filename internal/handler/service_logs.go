@@ -4,10 +4,12 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/emm5317/miniport/internal/systemd"
 )
 
-func (h *Handler) Logs(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
+func (h *Handler) ServiceLogs(w http.ResponseWriter, r *http.Request) {
+	name := r.PathValue("name")
 	lines := h.LogTailLines
 	if v := r.URL.Query().Get("lines"); v != "" {
 		if n, err := strconv.Atoi(v); err == nil && n > 0 {
@@ -19,12 +21,11 @@ func (h *Handler) Logs(w http.ResponseWriter, r *http.Request) {
 	stream := r.URL.Query().Get("stream") == "true"
 
 	if stream && since != "" {
-		logs, err := h.docker.LogsSince(r.Context(), id, 0, since)
+		logs, err := systemd.LogsSince(r.Context(), name, since)
 		if err != nil {
 			httpError(w, err.Error(), 500)
 			return
 		}
-		// Return the current server timestamp for the next poll
 		w.Header().Set("X-Log-Timestamp", time.Now().UTC().Format(time.RFC3339Nano))
 		if logs == "" {
 			w.WriteHeader(204)
@@ -34,15 +35,15 @@ func (h *Handler) Logs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logs, err := h.docker.Logs(r.Context(), id, lines)
+	logs, err := systemd.Logs(r.Context(), name, lines)
 	if err != nil {
 		httpError(w, err.Error(), 500)
 		return
 	}
 	renderPartial(w, "logs-panel.html", map[string]any{
-		"ContainerID": id,
+		"ContainerID": name,
 		"Logs":        logs,
 		"Lines":       lines,
-		"BasePath":    "/containers/" + id,
+		"BasePath":    "/services/" + name,
 	})
 }

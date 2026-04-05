@@ -4,7 +4,7 @@
             Logs — <span class="font-mono text-xs">{{.ContainerID}}</span>
         </h3>
         <div class="flex gap-2 items-center flex-wrap">
-            <select id="log-line-count" onchange="reloadLogs('{{.ContainerID}}')"
+            <select id="log-line-count" onchange="reloadLogs('{{.BasePath}}')"
                     class="log-select">
                 <option value="50" {{if eq .Lines 50}}selected{{end}}>50</option>
                 <option value="100" {{if eq .Lines 100}}selected{{end}}>100</option>
@@ -13,7 +13,7 @@
             </select>
             <input type="text" id="log-search" placeholder="Search logs…"
                    oninput="highlightLogSearch()" class="search-input" style="width:10rem">
-            <button id="log-stream-btn" onclick="toggleLogStream('{{.ContainerID}}')"
+            <button id="log-stream-btn" onclick="toggleLogStream('{{.BasePath}}')"
                     class="px-2 py-1 text-xs bg-gray-800 rounded hover:bg-gray-700 text-emerald-300">
                 ▶ Stream
             </button>
@@ -38,7 +38,7 @@
     var logAutoScroll = true;
     var logTimestamp = new Date().toISOString();
 
-    window.toggleLogStream = function(id) {
+    window.toggleLogStream = function(basePath) {
         var btn = document.getElementById('log-stream-btn');
         if (logStreamTimer) {
             stopLogStream();
@@ -52,7 +52,7 @@
         logTimestamp = new Date().toISOString();
         logStreamTimer = setInterval(function() {
             if (logStreamPaused) return;
-            fetch('/containers/' + id + '/logs?stream=true&since=' + encodeURIComponent(logTimestamp))
+            fetch(basePath + '/logs?stream=true&since=' + encodeURIComponent(logTimestamp))
                 .then(function(resp) {
                     var ts = resp.headers.get('X-Log-Timestamp');
                     if (ts) logTimestamp = ts;
@@ -136,10 +136,10 @@
         }
     };
 
-    window.reloadLogs = function(id) {
+    window.reloadLogs = function(basePath) {
         stopLogStream();
         var lines = document.getElementById('log-line-count').value;
-        htmx.ajax('GET', '/containers/' + id + '/logs?lines=' + lines, {target: '#detail-panel', swap: 'innerHTML'});
+        htmx.ajax('GET', basePath + '/logs?lines=' + lines, {target: '#detail-panel', swap: 'innerHTML'});
     };
 
     // Auto-scroll to bottom on initial load

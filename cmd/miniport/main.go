@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -59,9 +60,11 @@ func main() {
 
 	staticSub, _ := fs.Sub(web.Static, "static")
 
-	collector := stats.NewCollector(dockerSvc, time.Duration(statsInterval)*time.Second, 60)
+	serviceNames := parseServices(envOr("MINIPORT_SERVICES", ""))
 
-	h := handler.New(dockerSvc, logTailLines, collector)
+	collector := stats.NewCollector(dockerSvc, time.Duration(statsInterval)*time.Second, 60, serviceNames)
+
+	h := handler.New(dockerSvc, logTailLines, collector, serviceNames)
 
 	mux := http.NewServeMux()
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.FS(staticSub))))
@@ -75,6 +78,13 @@ func main() {
 	mux.HandleFunc("GET /containers/{id}/logs", h.Logs)
 	mux.HandleFunc("GET /containers/{id}/stats", h.Stats)
 	mux.HandleFunc("GET /containers/{id}/inspect", h.Inspect)
+	if len(serviceNames) > 0 {
+		mux.HandleFunc("GET /services", h.ServiceTable)
+		mux.HandleFunc("POST /services/{name}/start", h.ServiceStart)
+		mux.HandleFunc("POST /services/{name}/stop", h.ServiceStop)
+		mux.HandleFunc("POST /services/{name}/restart", h.ServiceRestart)
+		mux.HandleFunc("GET /services/{name}/logs", h.ServiceLogs)
+	}
 	mux.HandleFunc("POST /prune/containers", h.PruneContainers)
 	mux.HandleFunc("POST /prune/images", h.PruneImages)
 	mux.HandleFunc("POST /prune/volumes", h.PruneVolumes)
@@ -119,4 +129,19 @@ func envOr(key, fallback string) string {
 		return v
 	}
 	return fallback
+}
+
+func parseServices(s string) []string {
+	if s == "" {
+		return nil
+	}
+	parts := strings.Split(s, ",")
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		name := strings.TrimSpace(p)
+		if name != "" {
+			out = append(out, name)
+		}
+	}
+	return out
 }

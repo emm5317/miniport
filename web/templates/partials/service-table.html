@@ -1,0 +1,75 @@
+{{if .Services}}
+<table class="w-full text-sm" id="service-table">
+    <thead>
+        <tr class="text-left text-gray-500 border-b border-gray-800">
+            <th class="pb-3 pr-4 font-medium">Name</th>
+            <th class="pb-3 pr-4 font-medium">Description</th>
+            <th class="pb-3 pr-4 font-medium">State</th>
+            <th class="pb-3 pr-4 font-medium">CPU</th>
+            <th class="pb-3 pr-4 font-medium">Mem</th>
+            <th class="pb-3 font-medium">Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range .Services}}
+        <tr class="border-b border-gray-800/50 hover:bg-gray-900/50">
+            <td class="py-3 pr-4 font-mono text-sm">{{.Name}}</td>
+            <td class="py-3 pr-4 text-gray-400 text-xs max-w-xs truncate">{{.Description}}</td>
+            <td class="py-3 pr-4">
+                {{if eq .ActiveState "active"}}
+                    <span class="inline-flex items-center gap-1.5 text-emerald-400">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>{{.SubState}}
+                    </span>
+                {{else if eq .ActiveState "failed"}}
+                    <span class="text-red-400">failed</span>
+                {{else}}
+                    <span class="text-gray-500">{{.ActiveState}}</span>
+                {{end}}
+            </td>
+            {{if eq .ActiveState "active"}}
+            <td class="py-3 pr-4 font-mono text-xs">
+                <div class="flex items-center gap-1.5">
+                    <div class="stat-bar"><div class="stat-fill bg-emerald-400" style="width:{{printf "%.0f" (capPct .CPUPercent)}}%"></div></div>
+                    <span>{{printf "%.1f" .CPUPercent}}%</span>
+                </div>
+            </td>
+            <td class="py-3 pr-4 font-mono text-xs">
+                {{if gt .MemCurrent 0}}
+                    {{formatBytes .MemCurrent}}
+                {{else}}
+                    <span class="text-gray-600">—</span>
+                {{end}}
+            </td>
+            {{else}}
+            <td class="py-3 pr-4 text-gray-600 text-xs">—</td>
+            <td class="py-3 pr-4 text-gray-600 text-xs">—</td>
+            {{end}}
+            <td class="py-3">
+                <div class="flex flex-wrap gap-1">
+                    {{if eq .ActiveState "active"}}
+                    <button hx-post="/services/{{.Name}}/stop" hx-swap="none"
+                            class="px-2 py-1 text-xs bg-gray-800 rounded hover:bg-yellow-900/50 text-yellow-300">
+                        Stop
+                    </button>
+                    <button hx-post="/services/{{.Name}}/restart" hx-swap="none"
+                            class="px-2 py-1 text-xs bg-gray-800 rounded hover:bg-blue-900/50 text-blue-300">
+                        Restart
+                    </button>
+                    {{else}}
+                    <button hx-post="/services/{{.Name}}/start" hx-swap="none"
+                            class="px-2 py-1 text-xs bg-gray-800 rounded hover:bg-emerald-900/50 text-emerald-300">
+                        Start
+                    </button>
+                    {{end}}
+                    <button hx-get="/services/{{.Name}}/logs"
+                            hx-target="#detail-panel" hx-swap="innerHTML"
+                            class="px-2 py-1 text-xs bg-gray-800 rounded hover:bg-gray-700">
+                        Logs
+                    </button>
+                </div>
+            </td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+{{end}}
