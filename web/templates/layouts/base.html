@@ -7,36 +7,30 @@
     <link rel="stylesheet" href="/static/style.css">
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
 </head>
-<body class="bg-gray-950 text-gray-100 min-h-screen">
-    <nav class="border-b border-gray-800 px-6 py-4 flex items-center justify-between">
-        <h1 class="text-lg font-semibold tracking-tight">MiniPort</h1>
+<body>
+    <nav class="mp-nav">
+        <span class="mp-logo">Mini<span class="nav-accent">Port</span></span>
         <details class="relative">
-            <summary class="px-3 py-1.5 text-sm bg-gray-800 text-gray-300 rounded hover:bg-gray-700 cursor-pointer list-none">
-                Prune ▾
-            </summary>
-            <div class="absolute right-0 top-full mt-1 bg-gray-900 border border-gray-700 rounded shadow-lg z-10">
+            <summary class="mp-prune list-none">Prune ▾</summary>
+            <div class="action-dropdown">
                 <button hx-post="/prune/containers" hx-swap="none"
                         hx-confirm="Prune all stopped containers?"
-                        onclick="this.closest('details').removeAttribute('open')"
-                        class="block w-full text-left px-4 py-2 text-sm hover:bg-gray-800">
+                        onclick="this.closest('details').removeAttribute('open')">
                     Containers
                 </button>
                 <button hx-post="/prune/images" hx-swap="none"
                         hx-confirm="Prune all dangling images?"
-                        onclick="this.closest('details').removeAttribute('open')"
-                        class="block w-full text-left px-4 py-2 text-sm hover:bg-gray-800">
+                        onclick="this.closest('details').removeAttribute('open')">
                     Images
                 </button>
                 <button hx-post="/prune/volumes" hx-swap="none"
                         hx-confirm="Prune all unused volumes?"
-                        onclick="this.closest('details').removeAttribute('open')"
-                        class="block w-full text-left px-4 py-2 text-sm hover:bg-gray-800">
+                        onclick="this.closest('details').removeAttribute('open')">
                     Volumes
                 </button>
                 <button hx-post="/prune/networks" hx-swap="none"
                         hx-confirm="Prune all unused networks?"
-                        onclick="this.closest('details').removeAttribute('open')"
-                        class="block w-full text-left px-4 py-2 text-sm hover:bg-gray-800">
+                        onclick="this.closest('details').removeAttribute('open')">
                     Networks
                 </button>
             </div>

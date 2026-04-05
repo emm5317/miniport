@@ -1,15 +1,29 @@
 {{template "host-strip.html" .}}
-{{template "summary-strip.html" .Summary}}
-<div class="flex items-center gap-4 mb-4">
-    <input type="text" id="container-search" placeholder="Filter containers…"
-           oninput="filterContainers()"
-           class="search-input">
-    <div class="flex gap-1" id="state-tabs">
+
+<!-- Summary + filter bar -->
+<div class="summary">
+    <span class="badge"><span class="dot dot-green"></span><span class="badge-num running">{{.Summary.Running}}</span> running</span>
+    <span class="summary-sep">&middot;</span>
+    <span class="badge"><span class="dot dot-gray"></span><span class="badge-num">{{.Summary.Stopped}}</span> stopped</span>
+    {{if gt .Summary.Unhealthy 0}}
+    <span class="summary-sep">&middot;</span>
+    <span class="badge"><span class="dot dot-red"></span><span class="badge-num" style="color:var(--color-danger)">{{.Summary.Unhealthy}}</span> unhealthy</span>
+    {{end}}
+    <div class="tab-group" id="state-tabs">
         <button class="filter-tab filter-tab-active" onclick="setStateFilter('all')">All</button>
         <button class="filter-tab" onclick="setStateFilter('running')">Running</button>
         <button class="filter-tab" onclick="setStateFilter('exited')">Stopped</button>
     </div>
 </div>
+
+<!-- Search -->
+<div class="search-wrap">
+    <input type="text" id="container-search" placeholder="Filter containers…"
+           oninput="filterContainers()"
+           class="search-sm">
+</div>
+
+<!-- Table -->
 <table class="w-full text-sm" id="container-table">
     <thead>
         <tr class="text-left text-gray-500 border-b border-gray-800">
