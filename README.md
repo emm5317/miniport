@@ -1,6 +1,6 @@
 # MiniPort
 
-[![Go](https://img.shields.io/badge/Go-1.23+-00ADD8?logo=go&logoColor=white)](https://go.dev)
+[![Go](https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go&logoColor=white)](https://go.dev)
 [![Docker](https://img.shields.io/badge/Docker-SDK-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/engine/api/sdk/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
@@ -8,9 +8,9 @@ A lightweight Docker dashboard. Single Go binary, no database, no container requ
 
 ## Features
 
-- **Dashboard** — live container table with name, image, state, status, ports
+- **Dashboard** — live container table with summary strip (total/running/stopped/unhealthy counts + SVG status bar)
 - **Actions** — start, stop, restart, remove with confirmation
-- **Logs** — last 200 lines with copy-to-clipboard, properly demuxed stdout/stderr
+- **Logs** — configurable tail lines with copy-to-clipboard, properly demuxed stdout/stderr
 - **Stats** — live CPU, memory, network, and disk I/O (polled every 5s)
 - **Prune** — clean up containers, images, volumes, and networks
 - **Health endpoint** — `GET /healthz` for uptime monitors
@@ -19,16 +19,17 @@ A lightweight Docker dashboard. Single Go binary, no database, no container requ
 
 | Layer | Choice |
 |-------|--------|
-| Backend | Go + [Fiber v3](https://github.com/gofiber/fiber) |
+| Backend | Go stdlib `net/http` (zero framework dependencies) |
 | Docker | [Official SDK](https://pkg.go.dev/github.com/docker/docker/client) |
-| Frontend | HTMX + Alpine.js + Tailwind CSS (CDN) |
+| Frontend | HTMX (only external dependency) |
 | Templates | Go `html/template` via `go:embed` |
+| CSS | Embedded stylesheet (no CDN) |
 
-No JavaScript build step. No database. All state comes from the Docker daemon.
+No JavaScript build step. No database. No framework. All state comes from the Docker daemon.
 
 ## Requirements
 
-- Go 1.23+
+- Go 1.22+
 - Docker daemon running (accessible via `/var/run/docker.sock`)
 
 ## Quick Start
@@ -46,6 +47,8 @@ Listens on `127.0.0.1:8092` by default. Configure via environment variables:
 |----------|---------|-------------|
 | `MINIPORT_HOST` | `127.0.0.1` | Bind address |
 | `MINIPORT_PORT` | `8092` | Bind port |
+| `MINIPORT_LOG_TAIL_LINES` | `100` | Number of log lines to fetch per container |
+| `MINIPORT_LOG_REQUESTS` | `false` | Enable HTTP request logging |
 
 ## Deploy with systemd
 
@@ -68,8 +71,9 @@ Put behind a reverse proxy (Caddy, nginx) with authentication — the Docker soc
 
 ## Resource Usage
 
-- **Binary size:** ~14 MB
+- **Binary size:** ~11 MB (stripped)
 - **Idle RAM:** <20 MB
+- **Direct dependencies:** 1 (Docker SDK)
 - **No streaming connections** — stats are polled snapshots, not persistent goroutines
 
 ## License
