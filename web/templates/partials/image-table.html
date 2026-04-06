@@ -1,0 +1,35 @@
+<!-- Pull form -->
+<form hx-post="/images/pull" hx-swap="none" class="flex gap-2 mb-3" style="align-items:center">
+    <input type="text" name="ref" placeholder="nginx:latest" class="search-sm" required>
+    <button type="submit" class="btn-text">Pull</button>
+</form>
+
+<!-- Image table header -->
+<div class="img-head">
+    <span class="col-h">Repository</span>
+    <span class="col-h">Tag</span>
+    <span class="col-h">ID</span>
+    <span class="col-h">Size</span>
+    <span class="col-h">Created</span>
+    <span class="col-h">In Use</span>
+    <span class="col-h">Actions</span>
+</div>
+
+{{range .Images}}
+<div class="img-row">
+    <div class="cname">{{.Repo}}</div>
+    <div class="cimage">{{.Tag}}</div>
+    <div class="text-muted" style="font-size:0.7rem">{{.ShortID}}</div>
+    <div>{{formatBytes .Size}}</div>
+    <div class="text-muted" style="font-size:0.7rem">{{.Created}}</div>
+    <div>{{if ge .InUse 0}}{{.InUse}}{{else}}—{{end}}</div>
+    <div class="actions">
+        <button class="btn-danger" style="font-size:0.65rem;padding:2px 6px"
+                hx-delete="/images/{{.ID}}" hx-swap="none"
+                hx-confirm="Remove this image?">Remove</button>
+    </div>
+</div>
+{{end}}
+{{if not .Images}}
+<div class="img-row" style="justify-content:center;color:var(--text-faint)">No images found</div>
+{{end}}

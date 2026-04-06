@@ -95,6 +95,9 @@ func (h *Handler) Index(w http.ResponseWriter, r *http.Request) {
 	if svcs := h.buildServiceRows(); len(svcs) > 0 {
 		data["Services"] = svcs
 	}
+	if images, err := h.docker.ListImages(r.Context()); err == nil {
+		data["Images"] = buildImageRows(images)
+	}
 	renderPage(w, "pages/index", data)
 }
 

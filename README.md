@@ -16,12 +16,18 @@ A lightweight Docker and systemd dashboard. Single Go binary, no database, no co
 - **Dashboard** — 7-column CSS grid table with search, state filters (All/Running/Stopped), and sortable columns
 - **Inline stats** — CPU and memory bars with raw MB values, updated via background collector
 - **Sparkline charts** — SVG CPU and memory trend lines from ring buffer history, stacked with port badges
-- **Actions** — icon buttons (Stop/Start, Restart, Logs) with overflow menu (Stats, Inspect, Remove) via CSS-only `<details>` dropdown
+- **Actions** — icon buttons (Stop/Start, Restart, Logs) with overflow menu (Stats, Inspect, Recreate, Remove) via CSS-only `<details>` dropdown
+- **Pull & Recreate** — pull latest image and recreate container with same config (one-click redeploy)
 - **Stopped containers** — visually muted rows with reduced opacity
 - **Logs** — configurable tail lines (50/100/500/1000), in-log search with highlighting, live streaming via 2s polling, pause/resume on scroll, copy-to-clipboard, server-side syntax coloring (timestamps, key=value pairs, error highlighting)
 - **Stats panel** — live CPU, memory, network, and disk I/O with history sparklines
 - **Inspect panel** — container config, environment (masked by default), ports, networks, mounts, and labels in CSS-only tabbed interface
 - **Prune** — clean up containers, images, volumes, and networks via nav dropdown
+
+### Images
+- **Image list** — repository, tag, size, creation date, and in-use count
+- **Pull** — pull images by reference (e.g., `nginx:latest`) from the dashboard
+- **Remove** — delete unused images with confirmation
 
 ### Host
 - **System metrics** — 5 metric cards (CPU, memory, disk, network, uptime) with thin progress bars (Linux only, via `/proc`)
@@ -68,6 +74,18 @@ go build -ldflags="-s -w" -o miniport ./cmd/miniport
 ./miniport
 ```
 
+### Docker
+
+```bash
+docker run -d -p 8092:8092 \
+  -v /var/run/docker.sock:/var/run/docker.sock:ro \
+  miniport
+```
+
+Or build locally: `make docker-run`
+
+### From source
+
 Listens on `127.0.0.1:8092` by default. Configure via environment variables:
 
 | Variable | Default | Description |
@@ -78,6 +96,7 @@ Listens on `127.0.0.1:8092` by default. Configure via environment variables:
 | `MINIPORT_LOG_REQUESTS` | `false` | Enable HTTP request logging |
 | `MINIPORT_STATS_INTERVAL` | `15` | Background stats collection interval (seconds) |
 | `MINIPORT_SERVICES` | *(empty)* | Comma-separated systemd service names to monitor |
+| `MINIPORT_AUTH` | *(empty)* | Path to auth file for HTTP Basic Authentication (see [Security](#security)) |
 
 ## Deploy with systemd
 
@@ -102,7 +121,35 @@ Example `/opt/miniport/.env`:
 MINIPORT_SERVICES=voicetask,caddy,postgresql
 ```
 
-Put behind a reverse proxy (Caddy, nginx) with authentication — the Docker socket is root-equivalent access.
+Put behind a reverse proxy (Caddy, nginx) with TLS — the Docker socket is root-equivalent access.
+
+## Security
+
+MiniPort includes optional HTTP Basic Authentication. To enable it:
+
+1. Create an auth file with `username:sha256hex` entries:
+   ```bash
+   # Generate a password hash
+   echo -n 'your-password' | sha256sum | cut -d' ' -f1
+
+   # Create the auth file
+   echo "admin:$(echo -n 'your-password' | sha256sum | cut -d' ' -f1)" > /opt/miniport/auth
+   ```
+
+2. Set the `MINIPORT_AUTH` environment variable:
+   ```bash
+   MINIPORT_AUTH=/opt/miniport/auth ./miniport
+   ```
+
+The `/healthz` endpoint is always unauthenticated for monitoring probes.
+
+Additional security features:
+- **CSRF protection** — Origin/Referer validation on all state-changing requests
+- **Security headers** — `X-Content-Type-Options`, `X-Frame-Options`, `Content-Security-Policy`, `Referrer-Policy`
+- **Server timeouts** — Read, write, and idle timeouts to prevent slowloris attacks
+- **Localhost by default** — Binds to `127.0.0.1`, not `0.0.0.0`
+
+See [SECURITY.md](SECURITY.md) for the full security policy.
 
 ## Resource Usage
 
@@ -110,6 +157,15 @@ Put behind a reverse proxy (Caddy, nginx) with authentication — the Docker soc
 - **Idle RAM:** <20 MB
 - **Direct dependencies:** 1 (Docker SDK)
 - **No streaming connections** — stats are polled snapshots, not persistent goroutines
+
+## Releases
+
+Prebuilt Linux binaries (amd64, arm64) are available on the [Releases](https://github.com/emm5317/miniport/releases) page. Download, extract, and run:
+
+```bash
+tar xzf miniport_linux_amd64.tar.gz
+./miniport
+```
 
 ## License
 
