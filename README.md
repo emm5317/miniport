@@ -4,7 +4,7 @@
   <img src="assets/logo.png" alt="MiniPort" width="400">
 </p>
 
-[![Go](https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go&logoColor=white)](https://go.dev)
+[![Go](https://img.shields.io/badge/Go-1.25+-00ADD8?logo=go&logoColor=white)](https://go.dev)
 [![Docker](https://img.shields.io/badge/Docker-SDK-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/engine/api/sdk/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
@@ -45,6 +45,8 @@ A lightweight Docker and systemd dashboard. Single Go binary, no database, no co
 - **Responsive layout** — stacked card layout below 900px, hidden sparklines on mobile
 - **Health endpoint** — `GET /healthz` for uptime monitors
 - **Auto-refresh** — container and service tables poll every 10s, stats every 5s
+- **Reactive updates** — Docker events API triggers immediate re-collection on container state changes; falls back to polling
+- **Concurrency-limited stats** — parallel stats collection capped at 10 concurrent Docker API calls
 
 ## Stack
 
@@ -61,7 +63,7 @@ No JavaScript build step. No database. No framework. All state comes from the Do
 
 ## Requirements
 
-- Go 1.22+
+- Go 1.25+
 - Docker daemon running (accessible via `/var/run/docker.sock`)
 - Linux for host metrics and systemd service monitoring (graceful no-op on other platforms)
 
@@ -78,8 +80,14 @@ go build -ldflags="-s -w" -o miniport ./cmd/miniport
 
 ```bash
 docker run -d -p 8092:8092 \
-  -v /var/run/docker.sock:/var/run/docker.sock:ro \
+  -v /var/run/docker.sock:/var/run/docker.sock \
   miniport
+```
+
+Or with Docker Compose:
+
+```bash
+docker compose up -d
 ```
 
 Or build locally: `make docker-run`
@@ -157,6 +165,14 @@ See [SECURITY.md](SECURITY.md) for the full security policy.
 - **Idle RAM:** <20 MB
 - **Direct dependencies:** 1 (Docker SDK)
 - **No streaming connections** — stats are polled snapshots, not persistent goroutines
+
+## Development
+
+```bash
+make dev       # run locally with hot reload
+make test      # run test suite
+make build     # build stripped binary
+```
 
 ## Releases
 
