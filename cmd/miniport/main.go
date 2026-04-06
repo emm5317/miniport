@@ -96,6 +96,7 @@ func main() {
 	mux.HandleFunc("GET /containers/{id}/logs", h.Logs)
 	mux.HandleFunc("GET /containers/{id}/stats", h.Stats)
 	mux.HandleFunc("GET /containers/{id}/inspect", h.Inspect)
+	mux.HandleFunc("POST /containers/{id}/recreate", h.Recreate)
 	if len(cfg.Services) > 0 {
 		mux.HandleFunc("GET /services", h.ServiceTable)
 		mux.HandleFunc("POST /services/{name}/start", h.ServiceStart)
@@ -103,6 +104,9 @@ func main() {
 		mux.HandleFunc("POST /services/{name}/restart", h.ServiceRestart)
 		mux.HandleFunc("GET /services/{name}/logs", h.ServiceLogs)
 	}
+	mux.HandleFunc("GET /images", h.ImageList)
+	mux.HandleFunc("POST /images/pull", h.ImagePull)
+	mux.HandleFunc("DELETE /images/{id}", h.ImageRemove)
 	mux.HandleFunc("POST /prune/containers", h.PruneContainers)
 	mux.HandleFunc("POST /prune/images", h.PruneImages)
 	mux.HandleFunc("POST /prune/volumes", h.PruneVolumes)

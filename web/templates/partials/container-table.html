@@ -94,6 +94,9 @@
             <div class="action-dropdown">
                 <button hx-get="/containers/{{.ID}}/stats" hx-target="#detail-panel" hx-swap="innerHTML">Stats</button>
                 <button hx-get="/containers/{{.ID}}/inspect" hx-target="#detail-panel" hx-swap="innerHTML">Inspect</button>
+                <button hx-post="/containers/{{.ID}}/recreate" hx-swap="none"
+                        hx-confirm="Pull latest image and recreate {{.Name}}?"
+                        onclick="this.closest('details').removeAttribute('open')">Recreate</button>
                 <hr class="dropdown-divider">
                 <button class="btn-danger" hx-delete="/containers/{{.ID}}" hx-swap="none" hx-confirm="Remove {{.Name}}?">Remove</button>
             </div>

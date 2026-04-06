@@ -12,4 +12,13 @@
     {{template "service-table.html" .}}
 </div>
 {{end}}
+<div style="margin-top:1.5rem">
+    <h3 class="text-sm font-medium text-secondary mb-2">Images</h3>
+    <div id="image-list"
+         hx-get="/images"
+         hx-trigger="every 30s, refresh-images from:body"
+         hx-swap="innerHTML">
+        {{template "image-table.html" .}}
+    </div>
+</div>
 <div id="detail-panel" style="margin-top:1.5rem"></div>

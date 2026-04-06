@@ -16,12 +16,18 @@ A lightweight Docker and systemd dashboard. Single Go binary, no database, no co
 - **Dashboard** — 7-column CSS grid table with search, state filters (All/Running/Stopped), and sortable columns
 - **Inline stats** — CPU and memory bars with raw MB values, updated via background collector
 - **Sparkline charts** — SVG CPU and memory trend lines from ring buffer history, stacked with port badges
-- **Actions** — icon buttons (Stop/Start, Restart, Logs) with overflow menu (Stats, Inspect, Remove) via CSS-only `<details>` dropdown
+- **Actions** — icon buttons (Stop/Start, Restart, Logs) with overflow menu (Stats, Inspect, Recreate, Remove) via CSS-only `<details>` dropdown
+- **Pull & Recreate** — pull latest image and recreate container with same config (one-click redeploy)
 - **Stopped containers** — visually muted rows with reduced opacity
 - **Logs** — configurable tail lines (50/100/500/1000), in-log search with highlighting, live streaming via 2s polling, pause/resume on scroll, copy-to-clipboard, server-side syntax coloring (timestamps, key=value pairs, error highlighting)
 - **Stats panel** — live CPU, memory, network, and disk I/O with history sparklines
 - **Inspect panel** — container config, environment (masked by default), ports, networks, mounts, and labels in CSS-only tabbed interface
 - **Prune** — clean up containers, images, volumes, and networks via nav dropdown
+
+### Images
+- **Image list** — repository, tag, size, creation date, and in-use count
+- **Pull** — pull images by reference (e.g., `nginx:latest`) from the dashboard
+- **Remove** — delete unused images with confirmation
 
 ### Host
 - **System metrics** — 5 metric cards (CPU, memory, disk, network, uptime) with thin progress bars (Linux only, via `/proc`)
@@ -67,6 +73,18 @@ cd miniport
 go build -ldflags="-s -w" -o miniport ./cmd/miniport
 ./miniport
 ```
+
+### Docker
+
+```bash
+docker run -d -p 8092:8092 \
+  -v /var/run/docker.sock:/var/run/docker.sock:ro \
+  miniport
+```
+
+Or build locally: `make docker-run`
+
+### From source
 
 Listens on `127.0.0.1:8092` by default. Configure via environment variables:
 
@@ -139,6 +157,15 @@ See [SECURITY.md](SECURITY.md) for the full security policy.
 - **Idle RAM:** <20 MB
 - **Direct dependencies:** 1 (Docker SDK)
 - **No streaming connections** — stats are polled snapshots, not persistent goroutines
+
+## Releases
+
+Prebuilt Linux binaries (amd64, arm64) are available on the [Releases](https://github.com/emm5317/miniport/releases) page. Download, extract, and run:
+
+```bash
+tar xzf miniport_linux_amd64.tar.gz
+./miniport
+```
 
 ## License
 
