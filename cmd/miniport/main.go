@@ -136,7 +136,7 @@ func main() {
 		Handler:           h2,
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       30 * time.Second,
-		WriteTimeout:      60 * time.Second,
+		WriteTimeout:      180 * time.Second,
 		IdleTimeout:       120 * time.Second,
 	}
 
